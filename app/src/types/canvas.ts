@@ -94,6 +94,19 @@ export interface WebMessage {
   createdAt: number
 }
 
+export interface WebControlOption {
+  value: string
+  label: string
+}
+
+export interface WebControl {
+  id: string
+  label: string
+  type: 'select' | 'toggle'
+  value: string | boolean
+  options?: WebControlOption[]
+}
+
 export interface WebNodeData extends Record<string, unknown> {
   kind: 'web'
   title: string
@@ -113,6 +126,9 @@ export interface WebNodeData extends Record<string, unknown> {
   pageTitle?: string
   pendingRequestId?: string
   draft?: string
+  controls?: WebControl[]
+  controlsError?: string
+  controlsUpdatedAt?: number
 }
 
 export interface DocumentNodeData extends Record<string, unknown> {

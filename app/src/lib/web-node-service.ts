@@ -1,6 +1,12 @@
 import { createId } from '@/lib/id'
 import { useCanvasStore } from '@/store/canvas-store'
-import type { BridgeBinding, BridgeBindingInfo, BridgeEvent, BridgeTranscript } from '@/lib/web-bridge'
+import type {
+  BridgeBinding,
+  BridgeBindingInfo,
+  BridgeControls,
+  BridgeEvent,
+  BridgeTranscript,
+} from '@/lib/web-bridge'
 import {
   pingWebBridge,
   sendWebBridgeCommand,
@@ -44,6 +50,15 @@ function applyBinding(nodeId: string, binding: BridgeBinding) {
   }))
 }
 
+function applyControls(nodeId: string, data: BridgeControls) {
+  updateWeb(nodeId, (current) => ({
+    ...current,
+    controls: data.controls,
+    controlsError: undefined,
+    controlsUpdatedAt: Date.now(),
+  }))
+}
+
 function applyShortcut(nodeId: string, error?: string) {
   updateWeb(nodeId, (data) => {
     const provider = getWebProvider(data.providerId)
@@ -66,6 +81,13 @@ function upsertMessages(existing: WebMessage[], incoming: WebMessage[]): WebMess
   for (const message of incoming) {
     const index = indexById.get(message.id)
     if (index === undefined) {
+      const duplicate = result.find(
+        (entry) =>
+          entry.role === message.role &&
+          entry.content.trim() === message.content.trim() &&
+          Math.abs(entry.createdAt - message.createdAt) < 120_000,
+      )
+      if (duplicate) continue
       indexById.set(message.id, result.length)
       result.push(message)
     } else {
@@ -102,6 +124,7 @@ export async function connectWebNode(nodeId: string) {
       12_000,
     )
     applyBinding(nodeId, binding)
+    void refreshWebControls(nodeId)
   } catch (error) {
     const bridgeError = error instanceof WebBridgeError ? error : null
     if (bridgeError?.code === 'EXTENSION_MISSING' || bridgeError?.code === 'BRIDGE_DISCONNECTED') {
@@ -165,6 +188,7 @@ export async function bindCurrentWebNode(nodeId: string) {
       8_000,
     )
     applyBinding(nodeId, binding)
+    void refreshWebControls(nodeId)
     return { ok: true } satisfies WebActionResult
   } catch (error) {
     const message = errorMessage(error)
@@ -237,16 +261,23 @@ export async function submitWebPrompt(nodeId: string, text: string) {
   if (!prompt) return { ok: false, error: '输入内容为空。' } satisfies WebActionResult
   const node = getWebNode(nodeId)
   if (!node) return { ok: false, error: '节点不存在。' } satisfies WebActionResult
-  if (node.data.syncMode !== 'dom-mirror' || node.data.bindingState !== 'bound') {
-    return { ok: false, error: '当前节点没有可用的网页镜像。' } satisfies WebActionResult
+  if (node.data.bindingState !== 'bound') {
+    return { ok: false, error: '当前节点还没有连接网页标签页。' } satisfies WebActionResult
   }
   if (node.data.pendingRequestId) {
     return { ok: false, error: '上一轮网页操作还没有结束。' } satisfies WebActionResult
   }
 
   const requestId = createId('web-req')
+  const userMessage: WebMessage = {
+    id: createId('web-user'),
+    role: 'user',
+    content: prompt,
+    createdAt: Date.now(),
+  }
   updateWeb(nodeId, (data) => ({
     ...data,
+    visibleMessages: upsertMessages(data.visibleMessages, [userMessage]),
     mirrorState: 'submitting',
     mirrorError: undefined,
     pendingRequestId: requestId,
@@ -275,6 +306,9 @@ export async function submitWebPrompt(nodeId: string, text: string) {
       data.pendingRequestId === requestId
         ? {
             ...data,
+            visibleMessages: unknown
+              ? data.visibleMessages
+              : data.visibleMessages.filter((entry) => entry.id !== userMessage.id),
             mirrorState: unknown ? 'unknown' : 'error',
             mirrorError: unknown
               ? '提交结果未知。先打开原网页核对，不要直接重复发送。'
@@ -284,6 +318,43 @@ export async function submitWebPrompt(nodeId: string, text: string) {
         : data,
     )
     return { ok: false, error: message, unknown } satisfies WebActionResult
+  }
+}
+
+export async function refreshWebControls(nodeId: string) {
+  const node = getWebNode(nodeId)
+  if (!node || node.data.bindingState !== 'bound') return
+  try {
+    const data = await sendWebBridgeCommand<BridgeControls>(
+      { type: 'controls.get', nodeId },
+      8_000,
+    )
+    applyControls(nodeId, data)
+  } catch (error) {
+    updateWeb(nodeId, (data) => ({
+      ...data,
+      controlsError: errorMessage(error),
+      controlsUpdatedAt: Date.now(),
+    }))
+  }
+}
+
+export async function setWebControl(
+  nodeId: string,
+  controlId: string,
+  value: string | boolean,
+) {
+  try {
+    const data = await sendWebBridgeCommand<BridgeControls>(
+      { type: 'controls.set', nodeId, controlId, value },
+      8_000,
+    )
+    applyControls(nodeId, data)
+    return { ok: true } satisfies WebActionResult
+  } catch (error) {
+    const message = errorMessage(error)
+    updateWeb(nodeId, (data) => ({ ...data, controlsError: message }))
+    return { ok: false, error: message } satisfies WebActionResult
   }
 }
 
@@ -297,6 +368,7 @@ export async function refreshWebNodeBindings() {
       )
       if ('tabId' in info) {
         applyBinding(node.id, info)
+        void refreshWebControls(node.id)
         continue
       }
       if (info.bindingState === 'tab-closed') {
@@ -310,21 +382,34 @@ export async function refreshWebNodeBindings() {
           pendingRequestId: undefined,
         }))
       } else if (info.bindingState === 'unbound') {
-        updateWeb(node.id, (data) =>
-          data.bindingState === 'bound' ||
-          data.bindingState === 'error' ||
-          data.bindingState === 'tab-closed'
-            ? {
-                ...data,
-                runtimeTabId: undefined,
-                bindingState: 'unbound',
-                syncMode: 'shortcut',
-                mirrorState: data.visibleMessages.length ? 'stale' : 'unavailable',
-                mirrorError: '网页绑定已失效，请重新打开并绑定。',
-                pendingRequestId: undefined,
-              }
-            : data,
-        )
+        updateWeb(node.id, (data) => {
+          if (data.bindingState === 'extension-missing') {
+            return {
+              ...data,
+              bindingState: 'unbound',
+              syncMode: 'shortcut',
+              mirrorState: data.visibleMessages.length ? 'stale' : 'unavailable',
+              mirrorError: undefined,
+              pendingRequestId: undefined,
+            }
+          }
+          if (
+            data.bindingState === 'bound' ||
+            data.bindingState === 'error' ||
+            data.bindingState === 'tab-closed'
+          ) {
+            return {
+              ...data,
+              runtimeTabId: undefined,
+              bindingState: 'unbound',
+              syncMode: 'shortcut',
+              mirrorState: data.visibleMessages.length ? 'stale' : 'unavailable',
+              mirrorError: '网页绑定已失效，请重新打开并绑定。',
+              pendingRequestId: undefined,
+            }
+          }
+          return data
+        })
       }
     } catch {
       // A node may be unbound or the extension may have gone away again.
@@ -356,6 +441,7 @@ export function handleWebBridgeEvent(event: BridgeEvent) {
 
   if (event.type === 'binding.updated') {
     applyBinding(event.nodeId, event.binding)
+    if (!node.data.controls?.length) void refreshWebControls(event.nodeId)
     return
   }
 

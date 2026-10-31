@@ -1,5 +1,5 @@
 import type { WebBindingState, WebMirrorState, WebProviderId, WebSyncMode } from '@/types/canvas'
-import type { WebMessage } from '@/types/canvas'
+import type { WebControl, WebMessage } from '@/types/canvas'
 import { WEB_EXTENSION_ID } from '@/lib/web-providers'
 
 export interface BridgeBinding {
@@ -25,6 +25,13 @@ export interface BridgeTranscript {
   conversationUrl: string
   messages: WebMessage[]
   mirror: boolean
+}
+
+export interface BridgeControls {
+  provider: WebProviderId
+  title: string
+  conversationUrl: string
+  controls: WebControl[]
 }
 
 export type BridgeEvent = { type: 'bridge.ready'; version: string } | { type: 'bridge.disconnected' } | {

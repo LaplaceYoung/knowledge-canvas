@@ -143,9 +143,6 @@ function ThreadWelcome({ hasSource }: { hasSource: boolean }) {
 
   return (
     <div className="flex flex-col items-start gap-3 py-5">
-      <p className="max-w-sm text-[length:var(--content-font-size)] leading-7 text-muted-foreground">
-        {hasSource ? '就引用内容继续追问，回答会保留来源。' : '直接提问，或从当前上游上下文开始。'}
-      </p>
       <div className="flex flex-wrap gap-1.5">
         {suggestions.map((prompt) => (
           <ThreadPrimitive.Suggestion key={prompt} prompt={prompt} send={false} asChild>

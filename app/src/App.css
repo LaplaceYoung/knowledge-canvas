@@ -236,8 +236,7 @@ body {
   background: var(--ring) !important;
 }
 
-.node-map-pill,
-.node-overview-summary {
+.node-map-pill {
   display: none;
 }
 
@@ -253,17 +252,12 @@ body {
   display: none;
 }
 
-.zoom-overview .node-overview-summary {
-  display: block;
-  overflow: hidden;
-}
 
 .zoom-overview .node-drag-handle {
   border-bottom: 0;
 }
 
 .zoom-map .node-drag-handle,
-.zoom-map .node-overview-summary,
 .zoom-map .node-thread,
 .zoom-map .document-body,
 .zoom-map .node-resize-line,
@@ -517,8 +511,8 @@ body {
   background: var(--card);
 }
 
-.web-state-line {
-  background: color-mix(in oklab, var(--muted) 28%, transparent);
+.web-controls {
+  background: var(--card);
 }
 
 .web-error-line {
@@ -531,10 +525,6 @@ body {
   -webkit-user-select: text;
 }
 
-.web-welcome {
-  min-height: 100%;
-  background: var(--card);
-}
 
 .web-messages {
   min-height: 100%;
@@ -549,13 +539,9 @@ body {
   background: var(--card);
 }
 
-.web-linked-footer {
-  background: var(--card);
-}
 
 .is-focus .web-messages,
-.is-focus .web-composer,
-.is-focus .web-welcome {
+.is-focus .web-composer {
   max-width: 840px;
   margin-left: auto;
   margin-right: auto;

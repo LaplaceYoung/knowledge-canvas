@@ -1,4 +1,4 @@
-const EXTENSION_VERSION = '0.2.0'
+const EXTENSION_VERSION = '0.3.0'
 const BINDINGS_KEY = 'knowledge_canvas_web_bindings_v1'
 const ALLOWED_CANVAS_ORIGINS = new Set([
   'http://localhost:3000',
@@ -13,49 +13,56 @@ const PROVIDERS = {
     homeUrl: 'https://chatgpt.com/',
     origins: ['https://chatgpt.com', 'https://chat.openai.com'],
     mirrorSupported: true,
-    adapterVersion: 'chatgpt-dom-0.1',
+    adapterVersion: 'chatgpt-dom-0.3.0',
   },
   claude: {
     id: 'claude',
     homeUrl: 'https://claude.ai/new',
     origins: ['https://claude.ai'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'claude-dom-0.3.0',
   },
   gemini: {
     id: 'gemini',
     homeUrl: 'https://gemini.google.com/app',
     origins: ['https://gemini.google.com'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'gemini-dom-0.3.0',
   },
   grok: {
     id: 'grok',
     homeUrl: 'https://grok.com/',
     origins: ['https://grok.com'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'grok-dom-0.3.0',
   },
   deepseek: {
     id: 'deepseek',
     homeUrl: 'https://chat.deepseek.com/',
     origins: ['https://chat.deepseek.com'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'deepseek-dom-0.3.0',
   },
   doubao: {
     id: 'doubao',
     homeUrl: 'https://www.doubao.com/chat/',
     origins: ['https://www.doubao.com', 'https://doubao.com'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'doubao-dom-0.3.0',
   },
   qwen: {
     id: 'qwen',
-    homeUrl: 'https://www.qwen.com/',
+    homeUrl: 'https://chat.qwen.ai/',
     origins: ['https://www.qwen.com', 'https://qwen.com', 'https://chat.qwen.ai'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'qwen-dom-0.3.0',
   },
   kimi: {
     id: 'kimi',
     homeUrl: 'https://www.kimi.com/',
     origins: ['https://www.kimi.com', 'https://kimi.com'],
-    mirrorSupported: false,
+    mirrorSupported: true,
+    adapterVersion: 'kimi-dom-0.3.0',
   },
 }
 
@@ -86,15 +93,6 @@ function isProviderUrl(provider, value) {
 function isProviderHome(provider, value) {
   const url = urlFrom(value)
   return Boolean(url && provider.origins.includes(url.origin) && (url.pathname === '/' || url.pathname === ''))
-}
-
-function isNewChatGptSession(value) {
-  const url = urlFrom(value)
-  return Boolean(
-    url &&
-      PROVIDERS.chatgpt.origins.includes(url.origin) &&
-      (url.pathname === '/' || url.pathname === ''),
-  )
 }
 
 async function loadBindings() {
@@ -221,15 +219,14 @@ async function bindNodeToTab(nodeId, provider, tab) {
     }
   }
 
-  const mirrorArmed =
-    provider.id === 'chatgpt' && provider.mirrorSupported && isNewChatGptSession(canonical)
+  const mirrorArmed = Boolean(provider.mirrorSupported)
   const binding = {
     nodeId,
     providerId: provider.id,
     tabId: tab.id,
     title: tab.title || provider.id,
     conversationUrl: canonical,
-    mirror: provider.mirrorSupported && mirrorArmed,
+    mirror: mirrorArmed,
     mirrorArmed,
     adapterVersion: mirrorArmed ? provider.adapterVersion : undefined,
     updatedAt: Date.now(),
@@ -364,8 +361,8 @@ async function commandGetTranscript(message) {
   const bindings = await loadBindings()
   const binding = bindingForNode(bindings, message.nodeId)
   if (!binding) throw Object.assign(new Error('Web 节点还没有绑定标签页。'), { code: 'NOT_BOUND' })
-  if (binding.providerId !== 'chatgpt' || !binding.mirrorArmed || binding.stale) {
-    throw Object.assign(new Error('当前会话只支持标签页联动，不能读取镜像消息。'), {
+  if (!binding.mirrorArmed || binding.stale) {
+    throw Object.assign(new Error('当前会话不能读取镜像消息。'), {
       code: 'MIRROR_UNAVAILABLE',
     })
   }
@@ -385,6 +382,72 @@ async function commandGetTranscript(message) {
   }
 }
 
+async function commandGetControls(message) {
+  const bindings = await loadBindings()
+  const binding = bindingForNode(bindings, message.nodeId)
+  if (!binding) throw Object.assign(new Error('Web 节点还没有绑定标签页。'), { code: 'NOT_BOUND' })
+  const tab = await getTab(binding.tabId)
+  if (!tab) {
+    broadcast({ type: 'tab.closed', nodeId: message.nodeId })
+    throw Object.assign(new Error('网页标签页已关闭，请重新打开并绑定。'), { code: 'TAB_CLOSED' })
+  }
+  let response
+  try {
+    response = await sendToContentScript(binding.tabId, { type: 'KC_GET_CONTROLS' })
+  } catch {
+    throw Object.assign(new Error('网页适配器未就绪，刷新网页后重试。'), {
+      code: 'ADAPTER_UNAVAILABLE',
+    })
+  }
+  if (!response?.ok) {
+    throw Object.assign(new Error(response?.error || '网页没有返回控制项。'), {
+      code: 'ADAPTER_ERROR',
+    })
+  }
+  return {
+    provider: binding.providerId,
+    title: response.title || binding.title,
+    conversationUrl: response.url || binding.conversationUrl,
+    controls: Array.isArray(response.controls) ? response.controls : [],
+  }
+}
+
+async function commandSetControl(message) {
+  const controlId = typeof message.controlId === 'string' ? message.controlId : ''
+  if (!controlId) throw Object.assign(new Error('缺少控制项。'), { code: 'INVALID_CONTROL' })
+  const bindings = await loadBindings()
+  const binding = bindingForNode(bindings, message.nodeId)
+  if (!binding) throw Object.assign(new Error('Web 节点还没有绑定标签页。'), { code: 'NOT_BOUND' })
+  const tab = await getTab(binding.tabId)
+  if (!tab) {
+    broadcast({ type: 'tab.closed', nodeId: message.nodeId })
+    throw Object.assign(new Error('网页标签页已关闭，请重新打开并绑定。'), { code: 'TAB_CLOSED' })
+  }
+  let response
+  try {
+    response = await sendToContentScript(binding.tabId, {
+      type: 'KC_SET_CONTROL',
+      controlId,
+      value: message.value,
+    })
+  } catch {
+    throw Object.assign(new Error('网页适配器未就绪，刷新网页后重试。'), {
+      code: 'ADAPTER_UNAVAILABLE',
+    })
+  }
+  if (!response?.ok) {
+    throw Object.assign(new Error(response?.error || '网页没有接受控制项修改。'), {
+      code: 'ADAPTER_ERROR',
+    })
+  }
+  return {
+    provider: binding.providerId,
+    title: response.title || binding.title,
+    conversationUrl: response.url || binding.conversationUrl,
+    controls: Array.isArray(response.controls) ? response.controls : [],
+  }
+}
+
 async function commandSubmit(message) {
   const text = typeof message.text === 'string' ? message.text.trim() : ''
   if (!text || text.length > 8_000) {
@@ -393,8 +456,8 @@ async function commandSubmit(message) {
   const bindings = await loadBindings()
   const binding = bindingForNode(bindings, message.nodeId)
   if (!binding) throw Object.assign(new Error('Web 节点还没有绑定标签页。'), { code: 'NOT_BOUND' })
-  if (binding.providerId !== 'chatgpt' || !binding.mirrorArmed || binding.stale) {
-    throw Object.assign(new Error('当前 Provider 只支持标签页联动，不开放节点内提交。'), {
+  if (!binding.mirrorArmed || binding.stale) {
+    throw Object.assign(new Error('当前会话不能从节点提交。'), {
       code: 'MIRROR_UNAVAILABLE',
     })
   }
@@ -492,6 +555,10 @@ async function handleCommand(message) {
       return commandGetInfo(message)
     case 'transcript.getVisible':
       return commandGetTranscript(message)
+    case 'controls.get':
+      return commandGetControls(message)
+    case 'controls.set':
+      return commandSetControl(message)
     case 'composer.submit':
       return commandSubmit(message)
     default:
@@ -552,36 +619,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       return
     }
 
-    const previous = binding.conversationUrl
-    const previousIsHome = isProviderHome(provider, previous)
-    const nextUrl = urlFrom(changeInfo.url)
-    const nextIsHome = isProviderHome(provider, changeInfo.url)
-    const nextIsConversation =
-      provider.id === 'chatgpt' &&
-      nextUrl &&
-      (nextUrl.pathname.startsWith('/c/') || nextUrl.pathname.startsWith('/g/'))
-
-    if (binding.providerId === 'chatgpt' && binding.mirrorArmed) {
-      const isInitialNavigation = previousIsHome && (nextIsHome || nextIsConversation)
-      if (!isInitialNavigation) {
-        binding.stale = true
-        binding.mirrorArmed = false
-        binding.mirror = false
-        binding.updatedAt = Date.now()
-        await saveBindings(bindings)
-        broadcast({ type: 'web.changed', nodeId: binding.nodeId, conversationUrl: changeInfo.url })
-        broadcast({
-          type: 'binding.updated',
-          nodeId: binding.nodeId,
-          binding: bindingPayload(binding, changeInfo.title || tab.title),
-        })
-        return
-      }
-      binding.conversationUrl = changeInfo.url
-    } else {
-      binding.conversationUrl = changeInfo.url
-    }
-
+    binding.conversationUrl = changeInfo.url
     binding.updatedAt = Date.now()
     await saveBindings(bindings)
     broadcast({

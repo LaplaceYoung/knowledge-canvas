@@ -77,7 +77,7 @@ export function FocusView() {
             {node.data.kind === 'chat' ? (
               <ChatBody node={node as CanvasNode & { data: ChatNodeData }} />
             ) : node.data.kind === 'web' ? (
-              <WebBody node={node as CanvasNode & { data: WebNodeData }} mode="focus" />
+              <WebBody node={node as CanvasNode & { data: WebNodeData }} />
             ) : (
               <DocumentBody node={node as CanvasNode & { data: DocumentNodeData }} mode="focus" />
             )}

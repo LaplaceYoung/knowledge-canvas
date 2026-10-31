@@ -38,7 +38,7 @@ Web 节点不嵌入 iframe。它通过 `extension/` 中的 Chromium 扩展联动
 2. Load unpacked，选择仓库里的 `extension/`；
 3. 回到画布双击空白处或点击工具条“新增节点”。
 
-ChatGPT 新会话可以尝试节点内提交和 DOM 镜像，只读取网页可见的新消息；其他 Provider 当前只做标签页联动。扩展不读取 Cookie、Authorization 或网页 token，也不调用私有 API。详细限制见 `extension/README.md`。
+所有已绑定 Provider 都可以在节点内提交，并读取提交后网页可见的消息；节点会读取页面实际提供的模型、思考或联网控制项。扩展不读取 Cookie、Authorization 或网页 token，也不调用私有 API。DOM 适配会随 Provider 页面变化失效，详细限制见 `extension/README.md`。
 
 ## 本机 Agent
 

@@ -44,9 +44,9 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
 | **Source-anchored branches** | Every follow-up keeps its quoted passage, parent message or page, and a return path to the source. |
 | **Documents** | Read-only PDF, Markdown, and TXT nodes with text selection and local persistence. |
 | **PaddleOCR** | Keep scanned PDFs, render pages locally, call PaddleOCR cloud or self-hosted PaddleX, and anchor recognized text to page numbers. |
-| **Web nodes** | Bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, or Kimi tabs through a browser extension. ChatGPT new sessions can mirror visible messages into the node. |
+| **Web nodes** | Bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, or Kimi tabs through a browser extension. Prompt and read visible messages inside the node, with provider-specific model, thinking, and search controls. |
 | **BYOK models** | OpenAI-compatible `/chat/completions` endpoints, including local model servers, through a same-origin proxy that avoids browser CORS failures. |
-| **Node menu** | Double-click blank canvas space to create a chat, import a document, or choose a provider from an official-logo menu. |
+| **Node menu** | Double-click blank canvas space to connect a provider from an official-logo menu. New chats and document imports stay in the top bar. |
 | **Dark, restrained UI** | shadcn/ui controls, assistant-ui primitives, hairline borders, one blue accent, and 12–20px reading text. |
 | **Local-first storage** | Canvas state in local storage, PDF binaries in IndexedDB, API keys only in `sessionStorage`. |
 
@@ -57,7 +57,7 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
     <td width="50%">
       <img src="./assets/web-node.png" alt="Knowledge Canvas Web node mirroring a ChatGPT conversation with markdown and LaTeX" width="100%" />
       <br />
-      <sub><strong>Web node</strong> — a mirrored ChatGPT session with a node-level composer.</sub>
+      <sub><strong>Web node</strong> — a real provider session with in-node prompting and controls.</sub>
     </td>
     <td width="50%">
       <img src="./assets/provider-menu.png" alt="Knowledge Canvas new node menu with official ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi logos" width="100%" />
@@ -148,7 +148,7 @@ Knowledge Canvas (browser) ── same-origin ──> server.mjs / Vite middlewa
        │                                         ├─ /api/ocr   → PaddleOCR
        │                                         └─ /api/agent → local ACP preflight
        │
-       └─ extension messaging ──> real ChatGPT / DeepSeek tabs
+       └─ extension messaging ──> real provider tabs
 ```
 
 The model and OCR requests go through a same-origin server instead of direct browser calls. That avoids third-party CORS failures and keeps provider credentials out of URLs and page requests.
@@ -168,11 +168,11 @@ A Web node is **not an iframe**. It is a canvas node bound to a real provider ta
 
 Supported providers: **ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi**.
 
-- **ChatGPT**: a new session can use the DOM mirror adapter. The node sends a prompt through the normal webpage composer, observes only the new visible messages, and mirrors them back. This uses the webpage account/quota, not the BYOK key.
-- **Other providers**: linked-tab mode. The node opens, focuses, and binds the real page; it does not auto-read or auto-submit page content.
+- **In-node prompting**: every bound provider submits through its normal webpage composer and mirrors the visible messages that appear after the prompt. This uses the webpage account and quota, not the BYOK key.
+- **Provider controls**: the node discovers the model, thinking, and search controls that the page actually renders. DeepSeek exposes thinking and smart-search toggles; ChatGPT exposes thinking; Claude, Grok, Kimi, Gemini, and Doubao expose their current model menus when present.
 - **Fallback**: without the extension, or when a provider page changes, the node remains a real-page shortcut. Lost bindings and unknown submit states are shown explicitly, never treated as success.
 
-The ChatGPT adapter is tested against a local DOM fixture. Live provider DOM changes can still require selector updates. See [`extension/README.md`](./extension/README.md).
+Every adapter is DOM-based and provider-specific. Live provider DOM changes can require selector updates. See [`extension/README.md`](./extension/README.md).
 
 ## Local Agent (ACP)
 
@@ -199,7 +199,7 @@ This is an early self-hosted build, not a finished SaaS product.
 |---|---|
 | Infinite canvas, chat branches, documents, OCR | Working MVP |
 | PaddleOCR cloud + self-hosted adapters | Working against mocks and official API contract |
-| Web node W0/W1/W2 | Working against Chrome + a DOM fixture; live provider selectors need continuous verification |
+| Web node W0/W1/W2 | Working against Chrome live pages; provider selectors need continuous verification |
 | Local ACP agent | Preflight only; session/chat execution is next |
 | Cloud sync, accounts, sharing, collaboration | Not included |
 | Desktop app | Intentionally not included |
@@ -228,9 +228,9 @@ Yes. Any OpenAI-compatible local endpoint works through the same-origin chat pro
 </details>
 
 <details>
-<summary><strong>Does the browser extension read my ChatGPT cookies?</strong></summary>
+<summary><strong>Does the browser extension read my provider cookies?</strong></summary>
 
-No. It operates on the real page DOM within the user's existing browser session. It never calls `chrome.cookies`, reads authorization headers, or uses private APIs.
+No. It operates on the real page DOM within the user's existing browser session for every supported provider. It never calls `chrome.cookies`, reads authorization headers, or uses private APIs.
 
 </details>
 
@@ -267,5 +267,5 @@ MIT © LaplaceYoung. See [LICENSE](./LICENSE).
 Provider names and marks are trademarks of their respective owners and are used only to identify the linked real web services. Logo assets are sourced from the MIT-licensed [LobeHub Icons](https://github.com/lobehub/lobe-icons) set; see [`app/THIRD_PARTY_NOTICES.md`](./app/THIRD_PARTY_NOTICES.md).
 
 <div align="center">
-<sub>Infinite canvas · AI learning · branching chat · PDF OCR · ChatGPT web mirror · self-hosted</sub>
+<sub>Infinite canvas · AI learning · branching chat · PDF OCR · multi-provider web nodes · self-hosted</sub>
 </div>

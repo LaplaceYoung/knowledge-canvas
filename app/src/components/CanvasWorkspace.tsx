@@ -39,7 +39,6 @@ const nodeTypes: NodeTypes = {
 function CanvasNavigation() {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
   const viewport = useViewport()
-  const nodes = useCanvasStore((state) => state.nodes)
 
   return (
     <Panel position="bottom-right" className="!m-3 flex flex-col items-end gap-2">
@@ -58,9 +57,6 @@ function CanvasNavigation() {
           maskColor="oklch(0.16 0.005 260 / 0.72)"
           style={{ position: 'relative', width: 176, height: 104, margin: 0 }}
         />
-        <span className="absolute left-2 top-2 rounded bg-card/80 px-1 text-xs text-muted-foreground">
-          {nodes.length} 个节点
-        </span>
       </div>
       <div className="flex items-center rounded-lg border bg-card p-1 shadow-sm">
         <Button variant="ghost" size="icon-sm" aria-label="缩小" onClick={() => zoomOut({ duration: 160 })}>
@@ -88,7 +84,6 @@ function CanvasNavigation() {
 export function CanvasWorkspace() {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const pendingImportPointRef = useRef<CreateMenuPosition | null>(null)
   const lastPaneClickRef = useRef<{ time: number; x: number; y: number } | null>(null)
   const [panMode, setPanMode] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -157,18 +152,6 @@ export function CanvasWorkspace() {
 
   const closeCreateMenu = useCallback(() => setCreateMenu(null), [])
 
-  const createChatAtPoint = useCallback(
-    (position: CreateMenuPosition) => {
-      const point = screenToFlowPosition(position)
-      addChatNode({
-        x: point.x - NODE_SIZES.chat.width / 2,
-        y: point.y - NODE_SIZES.chat.height / 2,
-      })
-      setCreateMenu(null)
-    },
-    [addChatNode, screenToFlowPosition],
-  )
-
   const createWebAtPoint = useCallback(
     (providerId: WebProviderId, position: CreateMenuPosition) => {
       const point = screenToFlowPosition(position)
@@ -181,12 +164,6 @@ export function CanvasWorkspace() {
     },
     [addWebNode, screenToFlowPosition],
   )
-
-  const importAtPoint = useCallback((position: CreateMenuPosition) => {
-    pendingImportPointRef.current = position
-    setCreateMenu(null)
-    fileInputRef.current?.click()
-  }, [])
 
   const importFiles = useCallback(
     async (files: File[], clientPoint?: { x: number; y: number }) => {
@@ -235,7 +212,6 @@ export function CanvasWorkspace() {
   )
 
   const openFilePicker = useCallback(() => {
-    pendingImportPointRef.current = null
     fileInputRef.current?.click()
   }, [])
 
@@ -407,39 +383,11 @@ export function CanvasWorkspace() {
             <ToolRail
               panMode={panMode}
               onPanModeChange={setPanMode}
-              onNewChat={createChatAtCenter}
               onCreate={() => openCreateMenu()}
-              onImport={openFilePicker}
-              onFit={() => fitView({ padding: 0.18, duration: 220, maxZoom: 1 })}
-              hasNodes={nodes.length > 0}
             />
           </Panel>
           {nodes.length > 0 && <CanvasNavigation />}
         </ReactFlow>
-
-        {!nodes.length && (
-          <div className="pointer-events-none absolute left-[max(88px,8vw)] top-[20%] z-10 w-[min(360px,calc(100vw-120px))]">
-            <h1 className="text-2xl font-semibold tracking-tight">开始画布</h1>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-              创建对话、导入文档，或新建一个连接真实网页的 Web 节点。选中文本后，可以创建保留来源的追问。
-            </p>
-            <div className="pointer-events-auto mt-5 flex flex-wrap gap-2">
-              <Button onClick={createChatAtCenter}>新建对话</Button>
-              <Button variant="outline" onClick={openFilePicker}>
-                导入文档
-              </Button>
-              <Button variant="outline" onClick={() => openCreateMenu()}>
-                新增节点
-              </Button>
-            </div>
-            <div className="mt-8 hidden max-w-sm flex-wrap items-center gap-4 border-t pt-3 text-xs text-muted-foreground sm:flex">
-              <span>Space 拖动画布</span>
-              <span>双击空白新增节点</span>
-              <span>C 新建对话</span>
-              <span>W 打开菜单</span>
-            </div>
-          </div>
-        )}
 
         {dragActive && (
           <div className="pointer-events-none absolute inset-3 z-30 flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-ring bg-background/90 text-sm">
@@ -457,8 +405,7 @@ export function CanvasWorkspace() {
           onChange={(event) => {
             const files = Array.from(event.target.files ?? [])
             event.currentTarget.value = ''
-            void importFiles(files, pendingImportPointRef.current ?? undefined)
-            pendingImportPointRef.current = null
+            void importFiles(files)
           }}
         />
 
@@ -466,8 +413,6 @@ export function CanvasWorkspace() {
           <NodeCreateMenu
             position={createMenu}
             onClose={closeCreateMenu}
-            onCreateChat={createChatAtPoint}
-            onImport={importAtPoint}
             onCreateWeb={createWebAtPoint}
           />
         )}

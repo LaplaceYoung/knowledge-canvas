@@ -7,7 +7,6 @@ import { formatSourcePage } from '@/lib/context'
 import { getNodeSize } from '@/lib/layout'
 import { cancelDocumentOcr } from '@/lib/ocr-runner'
 import { openWebNodePage } from '@/lib/web-node-service'
-import { getWebProvider, webUrlLabel } from '@/lib/web-providers'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ProviderLogo } from '@/components/ProviderLogo'
 import { Badge } from '@/components/ui/badge'
@@ -36,27 +35,10 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
   const isChat = node.data.kind === 'chat'
   const webData = node.data.kind === 'web' ? node.data : null
   const isWeb = Boolean(webData)
-  const webProvider = webData ? getWebProvider(webData.providerId) : null
-  const loading =
-    (node.data.kind === 'document' && node.data.status === 'loading') ||
-    Boolean(webData && webData.bindingState === 'opening')
   const error =
     (node.data.kind === 'document' && node.data.status === 'error') ||
     Boolean(webData && (webData.bindingState === 'error' || webData.mirrorState === 'error'))
   const ocrRunning = node.data.kind === 'document' && node.data.ocrStatus === 'running'
-  const summary =
-    node.data.kind === 'chat'
-      ? [...node.data.messages]
-          .reverse()
-          .find((message) => message.role === 'assistant')
-          ?.content.slice(0, 180)
-      : webData
-        ? `${webProvider?.label ?? 'Web'}${
-            webData.visibleMessages.length
-              ? ` · ${webData.visibleMessages.at(-1)?.content.slice(0, 140)}`
-              : ` · ${webUrlLabel(webData.conversationUrl)}`
-          }`
-        : `${node.data.fileName}${node.data.pageCount ? ` · ${node.data.pageCount} 页` : ''}`
   const typeLabel = isChat ? '对话' : isWeb ? 'Web' : '文档'
 
   const focusNode = () => {
@@ -98,13 +80,6 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
         }}
         title="回到可读缩放"
       >
-        {isChat ? (
-          <MessageSquare className="size-3" />
-        ) : webData ? (
-          <ProviderLogo providerId={webData.providerId} className="size-3" />
-        ) : (
-          <FileText className="size-3" />
-        )}
         <span className="max-w-40 truncate">{node.data.title}</span>
       </button>
 
@@ -129,18 +104,10 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
         ) : (
           <h2 className="min-w-0 flex-1 truncate px-1 text-[13px] font-medium">{node.data.title}</h2>
         )}
-        {loading && <Badge variant="secondary">{isWeb ? '连接中' : '解析中'}</Badge>}
+        {node.data.kind === 'document' && node.data.status === 'loading' && (
+          <Badge variant="secondary">解析中</Badge>
+        )}
         {ocrRunning && <Badge variant="secondary">OCR</Badge>}
-        {isWeb && webData?.bindingState === 'extension-missing' && (
-          <Badge variant="outline">快捷入口</Badge>
-        )}
-        {isWeb && webData?.mirrorState === 'answering' && (
-          <Badge variant="secondary">回答中</Badge>
-        )}
-        {isWeb &&
-          webData?.syncMode === 'dom-mirror' &&
-          webData.bindingState === 'bound' &&
-          webData.mirrorState === 'ready' && <Badge variant="secondary">镜像</Badge>}
         {error && <Badge variant="destructive">失败</Badge>}
         <div
           className={cn(
@@ -222,8 +189,6 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
           <q className="line-clamp-2 text-[13px] leading-5 text-foreground">{source.quote}</q>
         </button>
       )}
-
-      {summary && <div className="node-overview-summary px-3 py-3 text-sm leading-6 text-muted-foreground">{summary}</div>}
 
       {children}
 
