@@ -13,7 +13,7 @@ function detectProvider() {
   if (host === 'grok.com') return 'grok'
   if (host === 'chat.deepseek.com') return 'deepseek'
   if (host === 'www.doubao.com' || host === 'doubao.com') return 'doubao'
-  if (host === 'www.qwen.com' || host === 'qwen.com' || host === 'chat.qwen.ai') return 'qwen'
+  if (host === 'www.qwen.com' || host === 'qwen.com' || host === 'chat.qwen.ai' || host === 'www.qianwen.com' || host === 'qianwen.com') return 'qwen'
   if (host === 'www.kimi.com' || host === 'kimi.com') return 'kimi'
   return null
 }
@@ -106,7 +106,7 @@ function getSendButton() {
 }
 
 const SKIP_MARKDOWN_SELECTOR =
-  'button, [role="button"], svg, style, script, noscript, textarea, input, select, canvas, video, audio, iframe, .sr-only, [aria-hidden="true"], [data-markdown-copy="exclude"], [data-testid*="copy"], [data-testid*="feedback"], [data-testid*="action"]'
+  'button, [role="button"], svg, style, script, noscript, textarea, input, select, canvas, video, audio, iframe, .sr-only, .cdk-visually-hidden, [aria-hidden="true"], [data-markdown-copy="exclude"], [data-testid*="copy"], [data-testid*="feedback"], [data-testid*="action"]'
 
 function inlineMarkdownText(value) {
   return (value || '').replace(/\s+/g, ' ').trim()
@@ -921,10 +921,14 @@ const PROVIDER_SPECS = {
     send: ['button[aria-label*="发送"]', 'button[aria-label*="Send"]'],
     messages: [
       { selector: '[data-testid="user-message"]', role: 'user' },
-      { selector: '.font-claude-message', role: 'assistant' },
-      { selector: '[data-testid="assistant-message"]', role: 'assistant' },
+      {
+        selector: '[data-testid="assistant-message"]',
+        role: 'assistant',
+        contentSelector: '.standard-markdown',
+      },
     ],
     controls: claudeControls,
+    allowFallback: false,
   },
   gemini: {
     version: 'gemini-dom-0.3.0',
@@ -947,6 +951,7 @@ const PROVIDER_SPECS = {
       },
     ],
     controls: geminiControls,
+    allowFallback: false,
   },
   grok: {
     version: 'grok-dom-0.3.0',
@@ -956,8 +961,20 @@ const PROVIDER_SPECS = {
       'textarea',
     ],
     send: ['button[aria-label*="发送"]', 'button[aria-label*="Send"]', 'button[type="submit"]'],
-    messages: [],
+    messages: [
+      {
+        selector: '[data-testid="user-message"]',
+        role: 'user',
+        contentSelector: '.response-content-markdown',
+      },
+      {
+        selector: '[data-testid="assistant-message"]',
+        role: 'assistant',
+        contentSelector: '.response-content-markdown',
+      },
+    ],
     controls: grokControls,
+    allowFallback: false,
   },
   deepseek: {
     version: 'deepseek-dom-0.3.0',
@@ -971,27 +988,59 @@ const PROVIDER_SPECS = {
       { selector: '.ds-assistant-message-main-content', role: 'assistant' },
     ],
     controls: deepSeekControls,
+    allowFallback: false,
   },
   doubao: {
     version: 'doubao-dom-0.3.0',
     composer: ['.tiptap.ProseMirror[contenteditable="true"]', '[contenteditable="true"]'],
     send: ['button[aria-label*="发送"]', 'button[type="submit"]'],
-    messages: [],
+    messages: [
+      {
+        selector: '[data-testid="send_message"]',
+        role: 'user',
+        contentSelector: '[data-testid="message_text_content"]',
+      },
+      {
+        selector: '[data-testid="receive_message"]',
+        role: 'assistant',
+        contentSelector: '[data-testid="message_text_content"]',
+      },
+    ],
     controls: doubaoControls,
+    allowFallback: false,
   },
   qwen: {
     version: 'qwen-dom-0.3.0',
-    composer: ['textarea', '[contenteditable="true"]'],
-    send: ['button[aria-label*="发送"]', 'button[aria-label*="Send"]', 'button[type="submit"]'],
-    messages: [],
+    composer: ['[role="textbox"][contenteditable="true"]', 'textarea', '[contenteditable="true"]'],
+    send: ['button[aria-label="发送消息"]', 'button[aria-label*="发送"]', 'button[aria-label*="Send"]', 'button[type="submit"]'],
+    messages: [
+      { selector: '[data-chat-question-wrap]', role: 'user' },
+      {
+        selector: '[data-chat-answers-wrap]',
+        role: 'assistant',
+        contentSelector: '#qk-markdown-react, [class*="markdown"]',
+      },
+    ],
     controls: null,
+    allowFallback: false,
   },
   kimi: {
     version: 'kimi-dom-0.3.0',
     composer: ['.chat-input-editor[contenteditable="true"]', '[contenteditable="true"]'],
     send: ['button[aria-label*="发送"]', 'button[aria-label*="Send"]'],
-    messages: [],
+    messages: [
+      {
+        selector: '.chat-content-item-user',
+        role: 'user',
+        contentSelector: '.user-content__text, .user-content',
+      },
+      {
+        selector: '.chat-content-item-assistant .markdown-container:not(.toolcall-content-text) .markdown',
+        role: 'assistant',
+      },
+    ],
     controls: kimiControls,
+    allowFallback: false,
   },
 }
 

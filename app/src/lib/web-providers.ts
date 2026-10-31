@@ -67,8 +67,14 @@ export const WEB_PROVIDERS: Record<WebProviderId, WebProvider> = {
   qwen: {
     id: 'qwen',
     label: 'Qwen',
-    homeUrl: 'https://chat.qwen.ai/',
-    origins: ['https://www.qwen.com', 'https://qwen.com', 'https://chat.qwen.ai'],
+    homeUrl: 'https://www.qianwen.com/',
+    origins: [
+      'https://www.qianwen.com',
+      'https://qianwen.com',
+      'https://www.qwen.com',
+      'https://qwen.com',
+      'https://chat.qwen.ai',
+    ],
     logo: qwenLogo,
   },
   kimi: {

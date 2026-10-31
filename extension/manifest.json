@@ -22,7 +22,9 @@
     "https://qwen.com/*",
     "https://chat.qwen.ai/*",
     "https://www.kimi.com/*",
-    "https://kimi.com/*"
+    "https://kimi.com/*",
+    "https://www.qianwen.com/*",
+    "https://qianwen.com/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -43,7 +45,9 @@
         "https://qwen.com/*",
         "https://chat.qwen.ai/*",
         "https://www.kimi.com/*",
-        "https://kimi.com/*"
+        "https://kimi.com/*",
+        "https://www.qianwen.com/*",
+        "https://qianwen.com/*"
       ],
       "js": [
         "content/bridge.js"

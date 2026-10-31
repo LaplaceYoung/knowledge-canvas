@@ -52,8 +52,14 @@ const PROVIDERS = {
   },
   qwen: {
     id: 'qwen',
-    homeUrl: 'https://chat.qwen.ai/',
-    origins: ['https://www.qwen.com', 'https://qwen.com', 'https://chat.qwen.ai'],
+    homeUrl: 'https://www.qianwen.com/',
+    origins: [
+      'https://www.qianwen.com',
+      'https://qianwen.com',
+      'https://www.qwen.com',
+      'https://qwen.com',
+      'https://chat.qwen.ai',
+    ],
     mirrorSupported: true,
     adapterVersion: 'qwen-dom-0.3.0',
   },
