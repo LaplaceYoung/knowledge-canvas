@@ -17,7 +17,8 @@ Core capabilities:
 - Branching AI chat with streaming, stop, retry, Markdown, GFM, LaTeX, and code copy.
 - PDF, Markdown, and TXT document nodes.
 - Scanned PDF OCR through PaddleOCR cloud or self-hosted PaddleX, with page-anchored results.
-- Multiple persisted canvases with a left sidebar for creating, pinning, reordering, deleting, and switching.
+- Multiple persisted canvases with a collapsible left sidebar for creating, pinning, reordering, deleting, and switching.
+- A settings panel for LLM, search (TinyFish, Exa, DeepSeek, Bocha), PaddleOCR, and ACP keys/configuration.
 - Web nodes that bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi tabs through a Chrome extension. Every bound provider can be prompted from the node, mirror visible messages, and expose page-level model, thinking, or search controls.
 - BYOK OpenAI-compatible model endpoints through a same-origin proxy.
 - Session-only API keys, local canvas persistence, and no cookie access by the extension.

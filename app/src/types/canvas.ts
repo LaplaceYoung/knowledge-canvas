@@ -161,7 +161,13 @@ export interface ApiConfig {
   providerLabel: string
 }
 
-export type SettingsSection = 'model' | 'ocr' | 'agent' | 'display'
+export type SettingsSection = 'model' | 'search' | 'ocr' | 'agent' | 'display'
+
+export type SearchProvider = 'tinyfish' | 'exa' | 'deepseek' | 'bocha'
+
+export interface SearchConfig {
+  provider: SearchProvider
+}
 
 export interface CanvasViewport extends Viewport {
   x: number
@@ -195,6 +201,8 @@ export const NODE_SIZES = {
   document: { width: 640, height: 720, minWidth: 380, minHeight: 360 },
   web: { width: 520, height: 560, minWidth: 360, minHeight: 320 },
 } as const
+
+export const DEFAULT_SEARCH_CONFIG: SearchConfig = { provider: 'exa' }
 
 export const DEFAULT_API_CONFIG: ApiConfig = {
   baseUrl: 'https://api.openai.com/v1',

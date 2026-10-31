@@ -3,8 +3,10 @@ import { CheckCircle2, Eye, EyeOff, LoaderCircle } from 'lucide-react'
 import { getAgentStatus, probeAgent, type AgentProbe, type AgentStatus } from '@/lib/agent-api'
 import { getApiKey, setApiKey } from '@/lib/api-key'
 import { getOcrToken, setOcrToken } from '@/lib/ocr-token'
+import { SEARCH_PROVIDERS } from '@/lib/search-providers'
+import { getSearchKey, setSearchKey } from '@/lib/search-key'
 import { useCanvasStore } from '@/store/canvas-store'
-import type { OcrProvider, SettingsSection } from '@/types/canvas'
+import type { OcrProvider, SearchProvider, SettingsSection } from '@/types/canvas'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -52,6 +54,8 @@ function SettingsDialogBody() {
   const setApiConfig = useCanvasStore((state) => state.setApiConfig)
   const ocrConfig = useCanvasStore((state) => state.ocrConfig)
   const setOcrConfig = useCanvasStore((state) => state.setOcrConfig)
+  const searchConfig = useCanvasStore((state) => state.searchConfig)
+  const setSearchConfig = useCanvasStore((state) => state.setSearchConfig)
   const contentFontSize = useCanvasStore((state) => state.contentFontSize)
   const setContentFontSize = useCanvasStore((state) => state.setContentFontSize)
 
@@ -69,6 +73,14 @@ function SettingsDialogBody() {
   const [ocrAutoRun, setOcrAutoRun] = useState(ocrConfig.autoRun)
   const [ocrTokenValue, setOcrTokenValue] = useState(() => getOcrToken(ocrConfig.provider))
   const [showOcrToken, setShowOcrToken] = useState(false)
+  const [searchProvider, setSearchProvider] = useState<SearchProvider>(searchConfig.provider)
+  const [searchKeys, setSearchKeys] = useState<Record<SearchProvider, string>>(() => ({
+    tinyfish: getSearchKey('tinyfish'),
+    exa: getSearchKey('exa'),
+    deepseek: getSearchKey('deepseek'),
+    bocha: getSearchKey('bocha'),
+  }))
+  const [showSearchKey, setShowSearchKey] = useState<SearchProvider | null>(null)
   const [fontSize, setFontSize] = useState(contentFontSize)
 
   const [modelError, setModelError] = useState<string>()
@@ -142,6 +154,14 @@ function SettingsDialogBody() {
     setOcrError(undefined)
   }
 
+  const saveSearch = () => {
+    for (const provider of SEARCH_PROVIDERS) {
+      setSearchKey(provider.id, searchKeys[provider.id])
+    }
+    setSearchConfig({ provider: searchProvider })
+    setSettingsOpen(false)
+  }
+
   const saveDisplay = () => {
     setContentFontSize(fontSize)
     setSettingsOpen(false)
@@ -163,17 +183,18 @@ function SettingsDialogBody() {
 
   const saveCurrent = () => {
     if (section === 'model') saveModel()
+    else if (section === 'search') saveSearch()
     else if (section === 'ocr') saveOcr()
     else saveDisplay()
   }
 
   return (
     <Dialog open onOpenChange={setSettingsOpen}>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>工作区设置</DialogTitle>
+          <DialogTitle>设置</DialogTitle>
           <DialogDescription>
-            模型、OCR、本机 Agent 与阅读字号独立配置。模型请求经同源代理转发，不再依赖浏览器 CORS。
+            模型、搜索、OCR、本机 Agent 与阅读显示集中配置。密钥只保存在当前标签页。
           </DialogDescription>
         </DialogHeader>
 
@@ -182,8 +203,9 @@ function SettingsDialogBody() {
           onValueChange={(value) => setSettingsSection(value as SettingsSection)}
           className="gap-3"
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="model">模型</TabsTrigger>
+            <TabsTrigger value="search">搜索</TabsTrigger>
             <TabsTrigger value="ocr">OCR</TabsTrigger>
             <TabsTrigger value="agent">Agent</TabsTrigger>
             <TabsTrigger value="display">显示</TabsTrigger>
@@ -277,6 +299,77 @@ function SettingsDialogBody() {
             </p>
 
             {modelError && <p className="text-sm text-destructive">{modelError}</p>}
+          </TabsContent>
+
+          <TabsContent value="search" className="space-y-4">
+            <div className="grid gap-2">
+              <span className="text-sm font-medium">默认搜索源</span>
+              <div className="grid grid-cols-4 gap-1" role="group" aria-label="默认搜索源">
+                {SEARCH_PROVIDERS.map((provider) => (
+                  <Button
+                    key={provider.id}
+                    type="button"
+                    size="sm"
+                    variant={searchProvider === provider.id ? 'default' : 'outline'}
+                    onClick={() => setSearchProvider(provider.id)}
+                  >
+                    {provider.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {SEARCH_PROVIDERS.map((provider) => (
+                <div key={provider.id} className="grid gap-1.5 rounded-md border px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <label htmlFor={`search-key-${provider.id}`} className="text-sm font-medium">
+                      {provider.label}
+                    </label>
+                    {searchProvider === provider.id && (
+                      <span className="text-[11px] text-muted-foreground">默认</span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id={`search-key-${provider.id}`}
+                      type={showSearchKey === provider.id ? 'text' : 'password'}
+                      value={searchKeys[provider.id]}
+                      onChange={(event) =>
+                        setSearchKeys((current) => ({
+                          ...current,
+                          [provider.id]: event.target.value,
+                        }))
+                      }
+                      placeholder={provider.placeholder}
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2"
+                      aria-label={
+                        showSearchKey === provider.id ? `隐藏 ${provider.label} Key` : `显示 ${provider.label} Key`
+                      }
+                      onClick={() =>
+                        setShowSearchKey((current) =>
+                          current === provider.id ? null : provider.id,
+                        )
+                      }
+                    >
+                      {showSearchKey === provider.id ? <EyeOff /> : <Eye />}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="rounded-md bg-muted/60 px-3 py-2 text-xs leading-5 text-muted-foreground">
+              Search Key 只保存在当前标签页的 sessionStorage，不写入 localStorage 或画布快照。
+            </p>
           </TabsContent>
 
           <TabsContent value="ocr" className="space-y-4">
@@ -579,9 +672,11 @@ KC_ACP_CWD=/absolute/workspace/path`}</pre>
               <Button onClick={saveCurrent}>
                 {section === 'model'
                   ? '保存模型配置'
-                  : section === 'ocr'
-                    ? '保存 OCR 配置'
-                    : '保存显示设置'}
+                  : section === 'search'
+                    ? '保存搜索配置'
+                    : section === 'ocr'
+                      ? '保存 OCR 配置'
+                      : '保存显示设置'}
               </Button>
             </>
           )}

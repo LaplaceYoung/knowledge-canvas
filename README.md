@@ -43,6 +43,7 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
 |---|---|
 | **Infinite canvas** | Pan, zoom, drag, resize, minimap, semantic zoom, and camera reveal with React Flow. |
 | **Canvas sidebar** | Create, rename, pin, reorder, delete, and switch between multiple persisted canvases without leaving the workspace. |
+| **Settings** | One panel for LLM keys, search keys (TinyFish, Exa, DeepSeek, Bocha), PaddleOCR, ACP agent, and reading size. |
 | **Branching chat** | assistant-ui thread with streaming, stop, retry, copy, regenerate, Markdown, GFM, LaTeX, and code copy. |
 | **Source-anchored branches** | Every follow-up keeps its quoted passage, parent message or page, and a return path to the source. |
 | **Documents** | Read-only PDF, Markdown, and TXT nodes with text selection and local persistence. |
@@ -115,11 +116,12 @@ The extension has a stable ID and only connects to local canvas origins by defau
 
 ## Configuration
 
-Open **Settings** in the canvas top bar.
+Open **Settings** from the sidebar gear or the top bar model button.
 
 | Area | What you configure |
 |---|---|
 | **Model** | Base URL, model name, and optional API key. Supports OpenAI-compatible endpoints and local servers. |
+| **Search** | Session keys for TinyFish, Exa, DeepSeek, and Bocha, plus the default search source. |
 | **OCR** | PaddleOCR cloud (AI Studio token, PP-OCRv6 / PP-OCRv5) or a self-hosted PaddleX `/ocr` endpoint. |
 | **Agent** | Read-only ACP preflight status. The agent command is configured on the server, never submitted by the browser. |
 | **Display** | Reading font size from 12px to 20px with local persistence. |

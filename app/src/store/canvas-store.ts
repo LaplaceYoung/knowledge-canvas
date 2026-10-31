@@ -19,6 +19,7 @@ import type {
   OcrConfig,
   OcrPage,
   OcrRunStatus,
+  SearchConfig,
   SettingsSection,
   SourceAnchor,
   SourceJumpRequest,
@@ -26,7 +27,12 @@ import type {
   WebNodeData,
   WebProviderId,
 } from '@/types/canvas'
-import { DEFAULT_API_CONFIG, DEFAULT_OCR_CONFIG, NODE_SIZES } from '@/types/canvas'
+import {
+  DEFAULT_API_CONFIG,
+  DEFAULT_OCR_CONFIG,
+  DEFAULT_SEARCH_CONFIG,
+  NODE_SIZES,
+} from '@/types/canvas'
 import { WEB_PROVIDERS } from '@/lib/web-providers'
 
 const initialViewport: CanvasViewport = { x: 0, y: 0, zoom: 1 }
@@ -41,7 +47,9 @@ interface CanvasState {
   canvasTitle: string
   apiConfig: ApiConfig
   ocrConfig: OcrConfig
+  searchConfig: SearchConfig
   contentFontSize: number
+  sidebarCollapsed: boolean
   selectedNodeId: string | null
   focusedNodeId: string | null
   pendingInputNodeId: string | null
@@ -65,7 +73,9 @@ interface CanvasState {
   setPendingInputHandled: () => void
   setApiConfig: (config: ApiConfig) => void
   setOcrConfig: (config: OcrConfig) => void
+  setSearchConfig: (config: SearchConfig) => void
   setContentFontSize: (size: number) => void
+  setSidebarCollapsed: (collapsed: boolean) => void
   openSettings: (section?: SettingsSection) => void
   setSettingsOpen: (open: boolean) => void
   setSettingsSection: (section: SettingsSection) => void
@@ -261,7 +271,9 @@ export const useCanvasStore = create<CanvasState>()(
       canvasTitle: '未命名画布',
       apiConfig: DEFAULT_API_CONFIG,
       ocrConfig: DEFAULT_OCR_CONFIG,
+      searchConfig: DEFAULT_SEARCH_CONFIG,
       contentFontSize: 14,
+      sidebarCollapsed: false,
       selectedNodeId: null,
       focusedNodeId: null,
       pendingInputNodeId: null,
@@ -416,8 +428,10 @@ export const useCanvasStore = create<CanvasState>()(
       setPendingInputHandled: () => set({ pendingInputNodeId: null }),
       setApiConfig: (apiConfig) => set({ apiConfig }),
       setOcrConfig: (ocrConfig) => set({ ocrConfig }),
+      setSearchConfig: (searchConfig) => set({ searchConfig }),
       setContentFontSize: (contentFontSize) =>
         set({ contentFontSize: Math.min(20, Math.max(12, Math.round(contentFontSize))) }),
+      setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       openSettings: (section = 'model') => set({ settingsOpen: true, settingsSection: section }),
       setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
       setSettingsSection: (settingsSection) => set({ settingsSection }),
@@ -897,7 +911,9 @@ export const useCanvasStore = create<CanvasState>()(
         canvasTitle: state.canvasTitle,
         apiConfig: state.apiConfig,
         ocrConfig: state.ocrConfig,
+        searchConfig: state.searchConfig,
         contentFontSize: state.contentFontSize,
+        sidebarCollapsed: state.sidebarCollapsed,
       }),
       merge: (persisted, current) => {
         const saved = persisted as Partial<CanvasState> | undefined
@@ -953,6 +969,11 @@ export const useCanvasStore = create<CanvasState>()(
           viewport: saved?.viewport ?? current.viewport,
           apiConfig: { ...current.apiConfig, ...saved?.apiConfig },
           ocrConfig: { ...current.ocrConfig, ...saved?.ocrConfig },
+          searchConfig: { ...current.searchConfig, ...saved?.searchConfig },
+          sidebarCollapsed:
+            typeof saved?.sidebarCollapsed === 'boolean'
+              ? saved.sidebarCollapsed
+              : current.sidebarCollapsed,
           contentFontSize:
             typeof saved?.contentFontSize === 'number' ? saved.contentFontSize : current.contentFontSize,
           nodes: (saved?.nodes ?? [])

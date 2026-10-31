@@ -5,6 +5,7 @@ import { DocumentBody } from '@/components/DocumentNode'
 import { WebBody } from '@/components/WebNode'
 import { NodeShell } from '@/components/NodeShell'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode, ChatNodeData, DocumentNodeData, WebNodeData } from '@/types/canvas'
 
@@ -13,6 +14,7 @@ export function FocusView() {
   const nodes = useCanvasStore((state) => state.nodes)
   const setFocusedNodeId = useCanvasStore((state) => state.setFocusedNodeId)
   const setRevealNodeId = useCanvasStore((state) => state.setRevealNodeId)
+  const sidebarCollapsed = useCanvasStore((state) => state.sidebarCollapsed)
 
   const node = focusedNodeId ? nodes.find((entry) => entry.id === focusedNodeId) : null
 
@@ -45,7 +47,10 @@ export function FocusView() {
   if (!node) return null
 
   return (
-    <div className="fixed bottom-0 left-56 right-0 top-12 z-40 bg-background" role="dialog" aria-modal="true" aria-label={`专注阅读：${node.data.title}`}>
+    <div className={cn(
+      'fixed bottom-0 right-0 top-12 z-40 bg-background',
+      sidebarCollapsed ? 'left-14' : 'left-56',
+    )} role="dialog" aria-modal="true" aria-label={`专注阅读：${node.data.title}`}>
       <div className="flex h-full flex-col px-3 pb-3">
         <div className="flex h-10 flex-none items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { LayoutGrid, Pin, Plus, Trash2 } from 'lucide-react'
+import { LayoutGrid, PanelLeftClose, PanelLeftOpen, Pin, Plus, Settings2, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { unbindWebNodes } from '@/lib/web-node-service'
@@ -16,6 +16,9 @@ export function CanvasSidebar() {
   const deleteCanvas = useCanvasStore((state) => state.deleteCanvas)
   const toggleCanvasPin = useCanvasStore((state) => state.toggleCanvasPin)
   const reorderCanvas = useCanvasStore((state) => state.reorderCanvas)
+  const sidebarCollapsed = useCanvasStore((state) => state.sidebarCollapsed)
+  const setSidebarCollapsed = useCanvasStore((state) => state.setSidebarCollapsed)
+  const openSettings = useCanvasStore((state) => state.openSettings)
   const nodes = useCanvasStore((state) => state.nodes)
   const canvasSnapshots = useCanvasStore((state) => state.canvasSnapshots)
   const [deletingCanvas, setDeletingCanvas] = useState<CanvasSummary | null>(null)
@@ -83,26 +86,35 @@ export function CanvasSidebar() {
           setDropTargetId(null)
         }}
         className={cn(
-          'group flex h-9 items-center gap-0.5 rounded-md px-1 transition-colors',
+          'group relative flex h-9 items-center gap-0.5 rounded-md px-1 transition-colors',
           active
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
             : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
           dragCanvasId === canvas.id && 'opacity-50',
           dropTargetId === canvas.id && 'ring-1 ring-inset ring-ring',
+          sidebarCollapsed && 'justify-center px-0',
         )}
       >
         <button
           type="button"
           aria-current={active ? 'page' : undefined}
           title={title}
-          className="flex h-full min-w-0 flex-1 cursor-grab items-center gap-2 px-1 text-left text-[13px] active:cursor-grabbing"
+          className={cn(
+            'flex h-full min-w-0 flex-1 cursor-grab items-center gap-2 text-left text-[13px] active:cursor-grabbing',
+            sidebarCollapsed ? 'justify-center px-0' : 'px-1',
+          )}
           onClick={() => switchCanvas(canvas.id)}
         >
           <LayoutGrid className="size-4 shrink-0 opacity-70" />
-          <span className="truncate">{title}</span>
+          {!sidebarCollapsed && <span className="truncate">{title}</span>}
         </button>
 
-        <Button
+        {sidebarCollapsed && pinned && (
+          <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-ring" aria-hidden="true" />
+        )}
+
+        {!sidebarCollapsed && (
+          <Button
           type="button"
           variant="ghost"
           size="icon-sm"
@@ -114,10 +126,11 @@ export function CanvasSidebar() {
           aria-label={pinned ? '取消 Pin' : 'Pin 到顶部'}
           onClick={() => toggleCanvasPin(canvas.id)}
         >
-          <Pin className={cn('size-3.5', pinned && 'fill-current')} />
-        </Button>
+            <Pin className={cn('size-3.5', pinned && 'fill-current')} />
+          </Button>
+        )}
 
-        {canDelete && (
+        {!sidebarCollapsed && canDelete && (
           <Button
             type="button"
             variant="ghost"
@@ -127,16 +140,26 @@ export function CanvasSidebar() {
             aria-label="删除画布"
             onClick={() => setDeletingCanvas(canvas)}
           >
-            <Trash2 className="size-3.5" />
-          </Button>
+              <Trash2 className="size-3.5" />
+            </Button>
         )}
       </div>
     )
   }
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-3 text-sm font-semibold tracking-tight">
+    <aside
+      className={cn(
+        'flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200',
+        sidebarCollapsed ? 'w-14' : 'w-56',
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-12 shrink-0 items-center border-b border-sidebar-border text-sm font-semibold tracking-tight',
+          sidebarCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
+        )}
+      >
         <img
           src="/brand/icon.svg"
           alt=""
@@ -144,18 +167,23 @@ export function CanvasSidebar() {
           draggable={false}
           className="size-6 shrink-0"
         />
-        Knowledge Canvas
+        {!sidebarCollapsed && 'Knowledge Canvas'}
       </div>
 
       <div className="shrink-0 p-2">
         <Button
           type="button"
           variant="ghost"
-          className="h-9 w-full justify-start gap-2 px-2.5 text-[13px] font-normal text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          title="新建画布"
+          aria-label="新建画布"
+          className={cn(
+            'h-9 text-[13px] font-normal text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            sidebarCollapsed ? 'w-9 justify-center px-0' : 'w-full justify-start gap-2 px-2.5',
+          )}
           onClick={() => createCanvas()}
         >
           <Plus className="size-4" />
-          新建画布
+          {!sidebarCollapsed && '新建画布'}
         </Button>
       </div>
 
@@ -168,6 +196,34 @@ export function CanvasSidebar() {
           {unpinnedCanvases.map(renderCanvas)}
         </div>
       </nav>
+
+      <div className={cn('border-t border-sidebar-border p-2', sidebarCollapsed ? 'flex flex-col items-center gap-1' : 'flex items-center gap-1')}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="size-9 text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          title="设置"
+          aria-label="设置"
+          onClick={() => openSettings('model')}
+        >
+          <Settings2 className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className={cn(
+            'size-9 text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+            !sidebarCollapsed && 'ml-auto',
+          )}
+          title={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}
+          aria-label={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+        </Button>
+      </div>
 
       <ConfirmDialog
         open={Boolean(deletingCanvas)}

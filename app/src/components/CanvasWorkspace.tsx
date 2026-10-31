@@ -12,7 +12,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Minus, Plus } from 'lucide-react'
+import { Map, Minimize2, Minus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import ChatNode from '@/components/ChatNode'
 import DocumentNode from '@/components/DocumentNode'
@@ -39,25 +39,51 @@ const nodeTypes: NodeTypes = {
 function CanvasNavigation() {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
   const viewport = useViewport()
+  const [minimapOpen, setMinimapOpen] = useState(true)
 
   return (
     <Panel position="bottom-right" className="!m-3 flex flex-col items-end gap-2">
-      <div className="relative overflow-hidden rounded-lg border bg-card shadow-sm">
-        <MiniMap
-          pannable
-          zoomable
-          nodeColor={(node) =>
-            node.selected
-              ? 'oklch(0.68 0.13 250)'
-              : (node.data as CanvasNode['data']).kind === 'document'
-                ? 'oklch(0.48 0.01 260)'
-                : 'oklch(0.38 0.012 260)'
-          }
-          nodeStrokeWidth={0}
-          maskColor="oklch(0.16 0.005 260 / 0.72)"
-          style={{ position: 'relative', width: 176, height: 104, margin: 0 }}
-        />
-      </div>
+      {minimapOpen ? (
+        <div className="relative overflow-hidden rounded-lg border bg-card shadow-sm">
+          <MiniMap
+            pannable
+            zoomable
+            nodeColor={(node) =>
+              node.selected
+                ? 'oklch(0.68 0.13 250)'
+                : (node.data as CanvasNode['data']).kind === 'document'
+                  ? 'oklch(0.48 0.01 260)'
+                  : 'oklch(0.38 0.012 260)'
+            }
+            nodeStrokeWidth={0}
+            maskColor="oklch(0.16 0.005 260 / 0.72)"
+            style={{ position: 'relative', width: 176, height: 104, margin: 0 }}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="absolute right-1 top-1 size-6 bg-card/85 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-card"
+            aria-label="收起小地图"
+            title="收起小地图"
+            onClick={() => setMinimapOpen(false)}
+          >
+            <Minimize2 className="size-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          className="size-8 bg-card shadow-sm"
+          aria-label="展开小地图"
+          title="展开小地图"
+          onClick={() => setMinimapOpen(true)}
+        >
+          <Map className="size-4" />
+        </Button>
+      )}
       <div className="flex items-center rounded-lg border bg-card p-1 shadow-sm">
         <Button variant="ghost" size="icon-sm" aria-label="缩小" onClick={() => zoomOut({ duration: 160 })}>
           <Minus />

@@ -42,6 +42,7 @@ Knowledge Canvas 把这些关系放进空间里：
 |---|---|
 | **无限画布** | React Flow 平移、缩放、拖动、调整大小、minimap、三级语义缩放和相机定位。 |
 | **画布侧栏** | 新建、重命名、Pin、拖拽排序、删除并在多个本地画布之间切换，不离开当前工作区。 |
+| **设置面板** | 集中配置 LLM Key、搜索 Key（TinyFish、Exa、DeepSeek、博查）、PaddleOCR、ACP Agent 与阅读字号。 |
 | **分支对话** | assistant-ui 线程、流式输出、停止、重试、复制、重新生成、Markdown、GFM、LaTeX 和代码复制。 |
 | **来源锚点** | 每个追问保留引用文本、父消息或页码，可回到原文并恢复高亮。 |
 | **文档阅读** | PDF、Markdown、TXT 只读节点，支持文本选择与本地保存。 |
@@ -110,11 +111,12 @@ npm start
 
 ## 配置
 
-在画布右上角打开“工作区设置”。
+从侧栏设置按钮或右上角模型按钮打开“设置”。
 
 | 区域 | 内容 |
 |---|---|
 | **模型** | Base URL、模型名、可选 API Key；支持 OpenAI-compatible 接口和本机模型服务。 |
+| **搜索** | TinyFish、Exa、DeepSeek、博查的 session Key，以及默认搜索源。 |
 | **OCR** | PaddleOCR 云端（AI Studio Token、PP-OCRv6 / PP-OCRv5）或自建 PaddleX `/ocr`。 |
 | **Agent** | ACP 本机 Agent 预检；命令只允许在服务端配置。 |
 | **显示** | 正文字号 12–20px，本地持久化。 |
