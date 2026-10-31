@@ -30,6 +30,32 @@ npm run dev
 
 云端 Token 和自建服务 Token 都只保存在当前标签页。扫描 PDF 的 OCR 默认需要手动触发；设置里可以开启“导入扫描件后自动识别”，只处理没有文本层的页面。
 
+## Web 节点
+
+Web 节点不嵌入 iframe。它通过 `extension/` 中的 Chromium 扩展联动真实 ChatGPT / DeepSeek 标签页：
+
+1. 在 `chrome://extensions` 打开开发者模式；
+2. Load unpacked，选择仓库里的 `extension/`；
+3. 回到画布创建 Web 节点。
+
+ChatGPT 新会话可以尝试节点内提交和 DOM 镜像，只读取网页可见的新消息；DeepSeek 当前只做标签页联动。扩展不读取 Cookie、Authorization 或网页 token，也不调用私有 API。详细限制见 `extension/README.md`。
+
+## 本机 Agent
+
+设置中的 Agent 标签通过 ACP SDK 做连接预检，命令只能由服务端环境变量配置：
+
+```bash
+KC_ACP_COMMAND=/absolute/path/to/acp-agent
+KC_ACP_ARGS=[]
+KC_ACP_CWD=/absolute/workspace/path
+```
+
+当前预检会启动一个 Agent 进程并完成初始化/会话创建，随后退出；尚未把 Agent 接入普通对话执行。设计边界见 `docs/local-agent-integration.md`。
+
+## 阅读字号
+
+设置 → 显示可把正文、对话、文档和 OCR 文本的字号调到 12–20px。字号保存在本地画布配置中，不影响画布缩放。
+
 ## 生产运行
 
 ```bash

@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { handleAgentProbe, handleAgentStatus } from './server/agent-bridge.mjs'
 import { handleChatRequest } from './server/chat-proxy.mjs'
 import { handleOcrHealth, handleOcrRequest } from './server/ocr-proxy.mjs'
 
@@ -78,6 +79,14 @@ async function serveStatic(pathname, res) {
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+  if (url.pathname === '/api/agent/status') {
+    handleAgentStatus(req, res)
+    return
+  }
+  if (url.pathname === '/api/agent/probe') {
+    await handleAgentProbe(req, res)
+    return
+  }
   if (url.pathname === '/api/chat') {
     await handleChatRequest(req, res)
     return

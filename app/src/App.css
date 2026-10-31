@@ -509,6 +509,64 @@ body {
   background: var(--muted);
 }
 
+.web-body {
+  min-height: 0;
+}
+
+.web-toolbar {
+  background: var(--card);
+}
+
+.web-state-line {
+  background: color-mix(in oklab, var(--muted) 28%, transparent);
+}
+
+.web-error-line {
+  background: color-mix(in oklab, var(--destructive) 8%, transparent);
+}
+
+.web-scroll {
+  background: color-mix(in oklab, var(--muted) 40%, transparent);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.web-welcome {
+  min-height: 100%;
+  background: var(--card);
+}
+
+.web-messages {
+  min-height: 100%;
+  background: var(--card);
+}
+
+.web-messages [data-role="web-assistant"] > :last-child {
+  margin-bottom: 0;
+}
+
+.web-composer {
+  background: var(--card);
+}
+
+.web-linked-footer {
+  background: var(--card);
+}
+
+.is-focus .web-messages,
+.is-focus .web-composer,
+.is-focus .web-welcome {
+  max-width: 840px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.zoom-overview .web-body,
+.zoom-map .web-body {
+  display: none;
+}
+
 .document-markdown {
   min-height: 100%;
   padding: 20px 22px 40px;

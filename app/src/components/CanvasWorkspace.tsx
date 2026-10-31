@@ -16,19 +16,24 @@ import { Minus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import ChatNode from '@/components/ChatNode'
 import DocumentNode from '@/components/DocumentNode'
+import WebNode from '@/components/WebNode'
+import { WebNodeDialog } from '@/components/WebNodeDialog'
 import { ToolRail } from '@/components/ToolRail'
 import { TopBar } from '@/components/TopBar'
 import { Button } from '@/components/ui/button'
 import { detectDocumentType, importDocument } from '@/lib/files'
 import { getNodeSize } from '@/lib/layout'
 import { runDocumentOcr } from '@/lib/ocr-runner'
+import { connectWebNode, openWebNodePage } from '@/lib/web-node-service'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode } from '@/types/canvas'
+import type { WebProviderId } from '@/types/canvas'
 import { NODE_SIZES } from '@/types/canvas'
 
 const nodeTypes: NodeTypes = {
   chat: ChatNode,
   document: DocumentNode,
+  web: WebNode,
 }
 
 function CanvasNavigation() {
@@ -85,6 +90,7 @@ export function CanvasWorkspace() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [panMode, setPanMode] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [webDialogOpen, setWebDialogOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [zoomTier, setZoomTier] = useState<'detail' | 'overview' | 'map'>('detail')
   const nodes = useCanvasStore((state) => state.nodes)
@@ -96,6 +102,7 @@ export function CanvasWorkspace() {
   const setFocusedNodeId = useCanvasStore((state) => state.setFocusedNodeId)
   const addChatNode = useCanvasStore((state) => state.addChatNode)
   const addDocumentNode = useCanvasStore((state) => state.addDocumentNode)
+  const addWebNode = useCanvasStore((state) => state.addWebNode)
   const finishDocumentImport = useCanvasStore((state) => state.finishDocumentImport)
   const failDocumentImport = useCanvasStore((state) => state.failDocumentImport)
   const revealNodeId = useCanvasStore((state) => state.revealNodeId)
@@ -137,6 +144,19 @@ export function CanvasWorkspace() {
       y: point.y - NODE_SIZES.chat.height / 2,
     })
   }, [addChatNode, centerPoint, screenToFlowPosition])
+
+  const createWebAtCenter = useCallback(
+    (providerId: WebProviderId) => {
+      const point = screenToFlowPosition(centerPoint())
+      const id = addWebNode(providerId, {
+        x: point.x - NODE_SIZES.web.width / 2,
+        y: point.y - NODE_SIZES.web.height / 2,
+      })
+      setWebDialogOpen(false)
+      void connectWebNode(id)
+    },
+    [addWebNode, centerPoint, screenToFlowPosition],
+  )
 
   const importFiles = useCallback(
     async (files: File[], clientPoint?: { x: number; y: number }) => {
@@ -240,6 +260,10 @@ export function CanvasWorkspace() {
         event.preventDefault()
         openFilePicker()
       }
+      if (event.key.toLowerCase() === 'w') {
+        event.preventDefault()
+        setWebDialogOpen(true)
+      }
       if (event.key.toLowerCase() === 'f') {
         event.preventDefault()
         if (event.shiftKey) fitView({ padding: 0.18, duration: 220, maxZoom: 1 })
@@ -320,6 +344,13 @@ export function CanvasWorkspace() {
           onNodeDoubleClick={(event, node) => {
             const target = event.target as HTMLElement
             if (target.closest('input, textarea, button, a')) return
+            if (
+              node.data.kind === 'web' &&
+              (node.data.syncMode !== 'dom-mirror' || node.data.bindingState !== 'bound')
+            ) {
+              void openWebNodePage(node.id)
+              return
+            }
             setFocusedNodeId(node.id)
           }}
         >
@@ -329,6 +360,7 @@ export function CanvasWorkspace() {
               panMode={panMode}
               onPanModeChange={setPanMode}
               onNewChat={createChatAtCenter}
+              onNewWeb={() => setWebDialogOpen(true)}
               onImport={openFilePicker}
               onFit={() => fitView({ padding: 0.18, duration: 220, maxZoom: 1 })}
               hasNodes={nodes.length > 0}
@@ -341,18 +373,22 @@ export function CanvasWorkspace() {
           <div className="pointer-events-none absolute left-[max(88px,8vw)] top-[20%] z-10 w-[min(360px,calc(100vw-120px))]">
             <h1 className="text-2xl font-semibold tracking-tight">开始画布</h1>
             <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-              创建对话，或导入文档。选中文本后，可以创建保留来源的追问。
+              创建对话、导入文档，或新建一个连接真实网页的 Web 节点。选中文本后，可以创建保留来源的追问。
             </p>
-            <div className="pointer-events-auto mt-5 flex gap-2">
+            <div className="pointer-events-auto mt-5 flex flex-wrap gap-2">
               <Button onClick={createChatAtCenter}>新建对话</Button>
               <Button variant="outline" onClick={openFilePicker}>
                 导入文档
               </Button>
+              <Button variant="outline" onClick={() => setWebDialogOpen(true)}>
+                新建 Web 节点
+              </Button>
             </div>
-            <div className="mt-8 hidden max-w-sm items-center gap-4 border-t pt-3 text-xs text-muted-foreground sm:flex">
+            <div className="mt-8 hidden max-w-sm flex-wrap items-center gap-4 border-t pt-3 text-xs text-muted-foreground sm:flex">
               <span>Space 拖动画布</span>
               <span>C 新建对话</span>
               <span>D 导入文档</span>
+              <span>W 新建 Web 节点</span>
             </div>
           </div>
         )}
@@ -375,6 +411,12 @@ export function CanvasWorkspace() {
             event.currentTarget.value = ''
             void importFiles(files)
           }}
+        />
+
+        <WebNodeDialog
+          open={webDialogOpen}
+          onOpenChange={setWebDialogOpen}
+          onCreate={createWebAtCenter}
         />
       </div>
     </div>

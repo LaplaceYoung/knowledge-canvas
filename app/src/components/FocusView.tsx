@@ -2,10 +2,11 @@ import { useEffect, useMemo } from 'react'
 import { Crosshair } from 'lucide-react'
 import { ChatBody } from '@/components/ChatNode'
 import { DocumentBody } from '@/components/DocumentNode'
+import { WebBody } from '@/components/WebNode'
 import { NodeShell } from '@/components/NodeShell'
 import { Button } from '@/components/ui/button'
 import { useCanvasStore } from '@/store/canvas-store'
-import type { CanvasNode, ChatNodeData, DocumentNodeData } from '@/types/canvas'
+import type { CanvasNode, ChatNodeData, DocumentNodeData, WebNodeData } from '@/types/canvas'
 
 export function FocusView() {
   const focusedNodeId = useCanvasStore((state) => state.focusedNodeId)
@@ -75,6 +76,8 @@ export function FocusView() {
           <NodeShell node={node} selected={false} mode="focus">
             {node.data.kind === 'chat' ? (
               <ChatBody node={node as CanvasNode & { data: ChatNodeData }} />
+            ) : node.data.kind === 'web' ? (
+              <WebBody node={node as CanvasNode & { data: WebNodeData }} mode="focus" />
             ) : (
               <DocumentBody node={node as CanvasNode & { data: DocumentNodeData }} mode="focus" />
             )}

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { CheckCircle2, Eye, EyeOff, LoaderCircle } from 'lucide-react'
+import { getAgentStatus, probeAgent, type AgentProbe, type AgentStatus } from '@/lib/agent-api'
 import { getApiKey, setApiKey } from '@/lib/api-key'
 import { getOcrToken, setOcrToken } from '@/lib/ocr-token'
 import { useCanvasStore } from '@/store/canvas-store'
@@ -72,6 +73,24 @@ function SettingsDialogBody() {
 
   const [modelError, setModelError] = useState<string>()
   const [ocrError, setOcrError] = useState<string>()
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null)
+  const [agentProbe, setAgentProbe] = useState<AgentProbe | null>(null)
+  const [agentError, setAgentError] = useState<string>()
+  const [agentBusy, setAgentBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getAgentStatus()
+      .then((status) => {
+        if (!cancelled) setAgentStatus(status)
+      })
+      .catch((error) => {
+        if (!cancelled) setAgentError(error instanceof Error ? error.message : '无法读取 Agent 状态。')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const saveModel = () => {
     const normalized = baseUrl.trim().replace(/\/+$/, '')
@@ -128,6 +147,20 @@ function SettingsDialogBody() {
     setSettingsOpen(false)
   }
 
+  const checkAgent = async () => {
+    setAgentBusy(true)
+    setAgentError(undefined)
+    setAgentProbe(null)
+    try {
+      const result = await probeAgent()
+      setAgentProbe(result)
+    } catch (error) {
+      setAgentError(error instanceof Error ? error.message : 'Agent 检测失败。')
+    } finally {
+      setAgentBusy(false)
+    }
+  }
+
   const saveCurrent = () => {
     if (section === 'model') saveModel()
     else if (section === 'ocr') saveOcr()
@@ -140,7 +173,7 @@ function SettingsDialogBody() {
         <DialogHeader>
           <DialogTitle>工作区设置</DialogTitle>
           <DialogDescription>
-            模型、OCR 与阅读字号独立配置。模型请求经同源代理转发，不再依赖浏览器 CORS。
+            模型、OCR、本机 Agent 与阅读字号独立配置。模型请求经同源代理转发，不再依赖浏览器 CORS。
           </DialogDescription>
         </DialogHeader>
 
@@ -149,9 +182,10 @@ function SettingsDialogBody() {
           onValueChange={(value) => setSettingsSection(value as SettingsSection)}
           className="gap-3"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="model">模型</TabsTrigger>
-            <TabsTrigger value="ocr">PaddleOCR</TabsTrigger>
+            <TabsTrigger value="ocr">OCR</TabsTrigger>
+            <TabsTrigger value="agent">Agent</TabsTrigger>
             <TabsTrigger value="display">显示</TabsTrigger>
           </TabsList>
 
@@ -377,6 +411,115 @@ function SettingsDialogBody() {
             {ocrError && <p className="text-sm text-destructive">{ocrError}</p>}
           </TabsContent>
 
+          <TabsContent value="agent" className="space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="grid gap-0.5">
+                <span className="text-sm font-medium">ACP 本机 Agent</span>
+                <span className="text-xs leading-5 text-muted-foreground">
+                  通过服务端启动本机 Agent，验证 ACP 初始化与会话创建。
+                </span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={agentBusy || !agentStatus?.configured}
+                onClick={() => void checkAgent()}
+              >
+                {agentBusy ? (
+                  <LoaderCircle className="animate-spin" />
+                ) : (
+                  <CheckCircle2 />
+                )}
+                检测连接
+              </Button>
+            </div>
+
+            {agentStatus ? (
+              <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-2 rounded-md border px-3 py-2.5 text-xs">
+                <dt className="text-muted-foreground">配置</dt>
+                <dd>{agentStatus.configured ? '已配置' : '未配置'}</dd>
+                <dt className="text-muted-foreground">命令</dt>
+                <dd className="min-w-0 break-all">{agentStatus.command || '未设置'}</dd>
+                <dt className="text-muted-foreground">参数</dt>
+                <dd>{agentStatus.argsCount} 个</dd>
+                <dt className="text-muted-foreground">工作目录</dt>
+                <dd className="min-w-0 break-all">
+                  {agentStatus.cwd}
+                  {!agentStatus.cwdExists && (
+                    <span className="ml-1 text-destructive">（目录不存在）</span>
+                  )}
+                </dd>
+                <dt className="text-muted-foreground">协议</dt>
+                <dd>{agentStatus.protocol}</dd>
+              </dl>
+            ) : (
+              !agentError && <p className="text-xs text-muted-foreground">读取 Agent 配置中…</p>
+            )}
+
+            {!agentStatus?.configured && (
+              <div className="space-y-2 rounded-md bg-muted/50 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
+                <p>在服务端 `.env` 或启动环境里配置，浏览器不能提交任意命令：</p>
+                <pre className="overflow-x-auto rounded bg-background px-2 py-1.5 text-[11px] leading-5 text-foreground">{`KC_ACP_COMMAND=/absolute/path/to/acp-agent
+KC_ACP_ARGS=[]
+KC_ACP_CWD=/absolute/workspace/path`}</pre>
+                <p>修改后重启开发服务或 `server.mjs`。</p>
+              </div>
+            )}
+
+            {agentProbe && (
+              <div className="space-y-3 rounded-md border px-3 py-3 text-xs">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <CheckCircle2 className="size-4 text-ring" />
+                  Agent 已响应
+                </div>
+                <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-1.5">
+                  <dt className="text-muted-foreground">实现</dt>
+                  <dd>
+                    {agentProbe.agent?.title ||
+                      agentProbe.agent?.name ||
+                      '未提供名称'}
+                    {agentProbe.agent?.version ? ` · ${agentProbe.agent.version}` : ''}
+                  </dd>
+                  <dt className="text-muted-foreground">协议</dt>
+                  <dd>ACP v{agentProbe.protocolVersion}</dd>
+                  <dt className="text-muted-foreground">会话</dt>
+                  <dd>
+                    {agentProbe.sessionCreated ? '已创建' : '未创建'}
+                    {agentProbe.sessionError ? ` · ${agentProbe.sessionError}` : ''}
+                  </dd>
+                  <dt className="text-muted-foreground">认证</dt>
+                  <dd>
+                    {agentProbe.authMethods.length
+                      ? agentProbe.authMethods
+                          .map((method) => method.name || method.type)
+                          .join('、')
+                      : '无需额外认证'}
+                  </dd>
+                </dl>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(agentProbe.capabilities)
+                    .filter(([, supported]) => supported)
+                    .map(([key]) => (
+                      <span key={key} className="rounded border bg-muted/40 px-1.5 py-0.5">
+                        {key}
+                      </span>
+                    ))}
+                  {!Object.values(agentProbe.capabilities).some(Boolean) && (
+                    <span className="text-muted-foreground">只声明了基础 ACP 能力</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {agentError && <p className="text-sm text-destructive">{agentError}</p>}
+
+            <p className="rounded-md bg-muted/50 px-3 py-2 text-xs leading-5 text-muted-foreground">
+              连接检测只做 ACP 初始化和会话创建，不发送 prompt。Agent 仍可能初始化自己的项目环境。
+              当前阶段尚未把 Agent 接入普通对话执行；正式接入前还需完成独立会话、上游增量、权限和压缩事件验证。
+            </p>
+          </TabsContent>
+
           <TabsContent value="display" className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div className="grid gap-0.5">
@@ -426,16 +569,22 @@ function SettingsDialogBody() {
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setSettingsOpen(false)}>
-            取消
-          </Button>
-          <Button onClick={saveCurrent}>
-            {section === 'model'
-              ? '保存模型配置'
-              : section === 'ocr'
-                ? '保存 OCR 配置'
-                : '保存显示设置'}
-          </Button>
+          {section === 'agent' ? (
+            <Button onClick={() => setSettingsOpen(false)}>关闭</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={saveCurrent}>
+                {section === 'model'
+                  ? '保存模型配置'
+                  : section === 'ocr'
+                    ? '保存 OCR 配置'
+                    : '保存显示设置'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

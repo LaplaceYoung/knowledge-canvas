@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
-import { FileText, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
+import { FileText, Globe2, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode } from '@/types/canvas'
 import { formatSourcePage } from '@/lib/context'
 import { getNodeSize } from '@/lib/layout'
 import { cancelDocumentOcr } from '@/lib/ocr-runner'
+import { openWebNodePage } from '@/lib/web-node-service'
+import { getWebProvider, webUrlLabel } from '@/lib/web-providers'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,8 +33,15 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const source = node.data.source
   const isChat = node.data.kind === 'chat'
-  const loading = node.data.kind === 'document' && node.data.status === 'loading'
-  const error = node.data.kind === 'document' && node.data.status === 'error'
+  const webData = node.data.kind === 'web' ? node.data : null
+  const isWeb = Boolean(webData)
+  const webProvider = webData ? getWebProvider(webData.providerId) : null
+  const loading =
+    (node.data.kind === 'document' && node.data.status === 'loading') ||
+    Boolean(webData && webData.bindingState === 'opening')
+  const error =
+    (node.data.kind === 'document' && node.data.status === 'error') ||
+    Boolean(webData && (webData.bindingState === 'error' || webData.mirrorState === 'error'))
   const ocrRunning = node.data.kind === 'document' && node.data.ocrStatus === 'running'
   const summary =
     node.data.kind === 'chat'
@@ -40,7 +49,25 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
           .reverse()
           .find((message) => message.role === 'assistant')
           ?.content.slice(0, 180)
-      : `${node.data.fileName}${node.data.pageCount ? ` · ${node.data.pageCount} 页` : ''}`
+      : webData
+        ? `${webProvider?.label ?? 'Web'}${
+            webData.visibleMessages.length
+              ? ` · ${webData.visibleMessages.at(-1)?.content.slice(0, 140)}`
+              : ` · ${webUrlLabel(webData.conversationUrl)}`
+          }`
+        : `${node.data.fileName}${node.data.pageCount ? ` · ${node.data.pageCount} 页` : ''}`
+  const typeLabel = isChat ? '对话' : isWeb ? 'Web' : '文档'
+
+  const focusNode = () => {
+    if (
+      webData &&
+      (webData.syncMode !== 'dom-mirror' || webData.bindingState !== 'bound')
+    ) {
+      void openWebNodePage(node.id)
+      return
+    }
+    setFocusedNodeId(node.id)
+  }
 
   return (
     <section
@@ -50,7 +77,7 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
         selected && 'border-ring ring-1 ring-ring',
         mode === 'focus' && 'is-focus rounded-none border-0 shadow-none ring-0',
       )}
-      aria-label={`${isChat ? '对话' : '文档'}：${node.data.title}`}
+      aria-label={`${typeLabel}：${node.data.title}`}
     >
       {mode === 'canvas' && (
         <>
@@ -70,13 +97,25 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
         }}
         title="回到可读缩放"
       >
-        {isChat ? <MessageSquare className="size-3" /> : <FileText className="size-3" />}
+        {isChat ? (
+          <MessageSquare className="size-3" />
+        ) : isWeb ? (
+          <Globe2 className="size-3" />
+        ) : (
+          <FileText className="size-3" />
+        )}
         <span className="max-w-40 truncate">{node.data.title}</span>
       </button>
 
       <header className="node-drag-handle flex h-10 flex-none cursor-grab items-center gap-1.5 border-b px-2 active:cursor-grabbing">
         <span className="grid size-6 shrink-0 place-items-center text-muted-foreground" aria-hidden="true">
-          {isChat ? <MessageSquare className="size-3.5" /> : <FileText className="size-3.5" />}
+          {isChat ? (
+            <MessageSquare className="size-3.5" />
+          ) : isWeb ? (
+            <Globe2 className="size-3.5" />
+          ) : (
+            <FileText className="size-3.5" />
+          )}
         </span>
         {mode === 'canvas' ? (
           <Input
@@ -89,8 +128,18 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
         ) : (
           <h2 className="min-w-0 flex-1 truncate px-1 text-[13px] font-medium">{node.data.title}</h2>
         )}
-        {loading && <Badge variant="secondary">解析中</Badge>}
+        {loading && <Badge variant="secondary">{isWeb ? '连接中' : '解析中'}</Badge>}
         {ocrRunning && <Badge variant="secondary">OCR</Badge>}
+        {isWeb && webData?.bindingState === 'extension-missing' && (
+          <Badge variant="outline">快捷入口</Badge>
+        )}
+        {isWeb && webData?.mirrorState === 'answering' && (
+          <Badge variant="secondary">回答中</Badge>
+        )}
+        {isWeb &&
+          webData?.syncMode === 'dom-mirror' &&
+          webData.bindingState === 'bound' &&
+          webData.mirrorState === 'ready' && <Badge variant="secondary">镜像</Badge>}
         {error && <Badge variant="destructive">失败</Badge>}
         <div
           className={cn(
@@ -103,9 +152,17 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                title="专注阅读"
-                aria-label="专注阅读"
-                onClick={() => setFocusedNodeId(node.id)}
+                title={
+                  webData && (webData.syncMode !== 'dom-mirror' || webData.bindingState !== 'bound')
+                    ? '打开真实网页'
+                    : '专注阅读'
+                }
+                aria-label={
+                  webData && (webData.syncMode !== 'dom-mirror' || webData.bindingState !== 'bound')
+                    ? '打开真实网页'
+                    : '专注阅读'
+                }
+                onClick={focusNode}
               >
                 <Maximize2 />
               </Button>

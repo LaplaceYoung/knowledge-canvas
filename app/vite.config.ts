@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig, loadEnv, searchForWorkspaceRoot, type Plugin } from "vite"
+import { handleAgentProbe, handleAgentStatus } from "./server/agent-bridge.mjs"
 import { handleChatRequest } from "./server/chat-proxy.mjs"
 import { handleOcrHealth, handleOcrRequest } from "./server/ocr-proxy.mjs"
 
@@ -11,6 +12,20 @@ type Next = (error?: unknown) => void
 
 function ocrProxyMiddleware(req: IncomingMessage, res: ServerResponse, next: Next) {
   const pathname = new URL(req.url || "/", "http://localhost").pathname
+  if (pathname === "/api/agent/status") {
+    handleAgentStatus(req, res)
+    return
+  }
+  if (pathname === "/api/agent/probe") {
+    void handleAgentProbe(req, res).catch((error) => {
+      console.error("[agent-probe]", error)
+      if (!res.headersSent) {
+        res.statusCode = 500
+        res.end("Agent probe error")
+      }
+    })
+    return
+  }
   if (pathname === "/api/chat") {
     void handleChatRequest(req, res).catch((error) => {
       console.error("[chat-proxy]", error)

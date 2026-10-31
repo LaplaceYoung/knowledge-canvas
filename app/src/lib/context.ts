@@ -176,6 +176,7 @@ export function snapshotContextForFrozenBranch(nodes: CanvasNode[], nodeId: stri
   if (node.data.kind === 'chat') {
     return formatChatMessages(node.data.messages).slice(-12_000)
   }
+  if (node.data.kind === 'web') return ''
   return documentTextForContext(node.data).slice(0, 8_000)
 }
 

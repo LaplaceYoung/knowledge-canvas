@@ -11,6 +11,7 @@
     "start": "node --env-file-if-exists=.env server.mjs"
   },
   "dependencies": {
+    "@agentclientprotocol/sdk": "^2.2.0",
     "@assistant-ui/react": "^0.15.32",
     "@assistant-ui/react-markdown": "^0.14.24",
     "@xyflow/react": "^12.12.0",

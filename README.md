@@ -3,10 +3,13 @@
 以无限画布为核心的个人学习工作区。对话、文档和 Web 节点共享空间位置，来源与追问关系始终可见。
 
 - 应用代码：[`app/`](./app)
+- 浏览器扩展：[`extension/`](./extension)
 - 产品需求与设计：[`docs/`](./docs)
 - 当前后端：BYOK OpenAI-compatible API，经同源代理调用
 - 文档：PDF、Markdown、TXT，可选 PaddleOCR
 - Web 节点：ChatGPT / DeepSeek 真实网页会话的标签页联动；ChatGPT 新会话镜像按扩展适配状态开放
+- 本机 Agent：ACP 预检已接入，尚未作为普通对话执行后端
+- 阅读设置：正文与对话字号 12–20px 可调
 
 ## 开发
 
@@ -34,6 +37,7 @@ npm start
 - [无限画布设计](docs/infinite-canvas-design.md)
 - [Web 节点技术设计](docs/web-node-technical-design.md)
 - [执行后端评估](docs/execution-backend-evaluation.md)
+- [本机 Agent 接入准备](docs/local-agent-integration.md)
 
 ## 验证
 

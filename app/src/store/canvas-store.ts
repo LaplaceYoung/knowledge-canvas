@@ -20,8 +20,11 @@ import type {
   SourceAnchor,
   SourceJumpRequest,
   TextLayer,
+  WebNodeData,
+  WebProviderId,
 } from '@/types/canvas'
 import { DEFAULT_API_CONFIG, DEFAULT_OCR_CONFIG, NODE_SIZES } from '@/types/canvas'
+import { WEB_PROVIDERS } from '@/lib/web-providers'
 
 const initialViewport: CanvasViewport = { x: 0, y: 0, zoom: 1 }
 
@@ -61,6 +64,8 @@ interface CanvasState {
     initial: Pick<DocumentNodeData, 'title' | 'fileName' | 'fileType'>,
     position: XYPosition,
   ) => string
+  addWebNode: (providerId: WebProviderId, position: XYPosition) => string
+  updateWebNodeData: (id: string, updater: (data: WebNodeData) => WebNodeData) => void
   finishDocumentImport: (id: string, data: Partial<DocumentNodeData>) => void
   failDocumentImport: (id: string, error: string) => void
   setDocumentPage: (id: string, page: number) => void
@@ -101,6 +106,14 @@ function updateDocumentData(
   updater: (data: DocumentNodeData) => DocumentNodeData,
 ): CanvasNode {
   if (node.data.kind !== 'document') return node
+  return { ...node, data: updater(node.data) }
+}
+
+function updateWebData(
+  node: CanvasNode,
+  updater: (data: WebNodeData) => WebNodeData,
+): CanvasNode {
+  if (node.data.kind !== 'web') return node
   return { ...node, data: updater(node.data) }
 }
 
@@ -162,6 +175,39 @@ function recoverInterruptedOcr(node: CanvasNode): CanvasNode {
       ocrError: '上次 OCR 在页面刷新时中断，可重试未完成的页面。',
     },
   }
+}
+
+function recoverWebNode(node: CanvasNode): CanvasNode {
+  if (node.data.kind !== 'web') return node
+  const data = node.data
+  const interrupted = data.mirrorState === 'answering' || data.mirrorState === 'submitting'
+  const hadBinding = data.bindingState === 'bound' || data.bindingState === 'opening'
+  return {
+    ...node,
+    data: {
+      ...data,
+      runtimeTabId: undefined,
+      bindingState: hadBinding ? 'tab-closed' : data.bindingState,
+      syncMode: data.syncMode === 'dom-mirror' ? 'linked-tab' : data.syncMode,
+      mirrorState:
+        hadBinding || interrupted
+          ? (data.visibleMessages?.length ?? 0) > 0
+            ? 'stale'
+            : 'unavailable'
+          : data.mirrorState,
+      mirrorError:
+        hadBinding || interrupted
+          ? '页面刷新后需重新连接网页标签页，再核对最新消息。'
+          : data.mirrorError,
+      pendingRequestId: undefined,
+      visibleMessages: data.visibleMessages ?? [],
+    },
+  }
+}
+
+function sanitizeNodeForStorage(node: CanvasNode): CanvasNode {
+  const sanitized = recoverWebNode({ ...node, selected: false })
+  return sanitized
 }
 
 export const useCanvasStore = create<CanvasState>()(
@@ -260,6 +306,45 @@ export const useCanvasStore = create<CanvasState>()(
           revealNodeId: id,
         })
         return id
+      },
+
+      addWebNode: (providerId, position) => {
+        const state = get()
+        const provider = WEB_PROVIDERS[providerId]
+        const size = NODE_SIZES.web
+        const free = findFreePosition(state.nodes, position, size)
+        const id = createId('web')
+        const node: CanvasNode = {
+          id,
+          type: 'web',
+          position: free,
+          width: size.width,
+          height: size.height,
+          dragHandle: '.node-drag-handle',
+          data: {
+            kind: 'web',
+            title: provider.label,
+            providerId,
+            conversationUrl: provider.homeUrl,
+            bindingState: 'unbound',
+            syncMode: 'shortcut',
+            mirrorState: 'unavailable',
+            visibleMessages: [],
+          },
+        }
+        set({
+          nodes: [...state.nodes.map((entry) => ({ ...entry, selected: false })), { ...node, selected: true }],
+          selectedNodeId: id,
+          focusedNodeId: null,
+          revealNodeId: id,
+        })
+        return id
+      },
+
+      updateWebNodeData: (id, updater) => {
+        set((state) => ({
+          nodes: updateNodeById(state.nodes, id, (node) => updateWebData(node, updater)),
+        }))
       },
 
       finishDocumentImport: (id, data) => {
@@ -623,7 +708,7 @@ export const useCanvasStore = create<CanvasState>()(
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        nodes: state.nodes.map((node) => ({ ...node, selected: false })),
+        nodes: state.nodes.map(sanitizeNodeForStorage),
         viewport: state.viewport,
         canvasTitle: state.canvasTitle,
         apiConfig: state.apiConfig,
@@ -639,7 +724,10 @@ export const useCanvasStore = create<CanvasState>()(
           ocrConfig: { ...current.ocrConfig, ...saved?.ocrConfig },
           contentFontSize:
             typeof saved?.contentFontSize === 'number' ? saved.contentFontSize : current.contentFontSize,
-          nodes: (saved?.nodes ?? []).map(recoverInterruptedChat).map(recoverInterruptedOcr),
+          nodes: (saved?.nodes ?? [])
+            .map(recoverInterruptedChat)
+            .map(recoverInterruptedOcr)
+            .map(recoverWebNode),
           focusedNodeId: null,
           selectedNodeId: null,
           pendingInputNodeId: null,

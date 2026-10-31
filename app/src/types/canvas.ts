@@ -59,6 +59,54 @@ export interface OcrConfig {
   autoRun: boolean
 }
 
+export type WebProviderId = 'chatgpt' | 'deepseek'
+export type WebBindingState =
+  | 'unbound'
+  | 'opening'
+  | 'bound'
+  | 'tab-closed'
+  | 'extension-missing'
+  | 'permission-required'
+  | 'error'
+export type WebSyncMode = 'shortcut' | 'linked-tab' | 'dom-mirror'
+export type WebMirrorState =
+  | 'unavailable'
+  | 'ready'
+  | 'submitting'
+  | 'answering'
+  | 'needs-login'
+  | 'stale'
+  | 'unknown'
+  | 'error'
+
+export interface WebMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: number
+}
+
+export interface WebNodeData extends Record<string, unknown> {
+  kind: 'web'
+  title: string
+  parentId?: string
+  source?: SourceAnchor
+  providerId: WebProviderId
+  conversationUrl?: string
+  runtimeTabId?: number
+  bindingState: WebBindingState
+  syncMode: WebSyncMode
+  mirrorState: WebMirrorState
+  mirrorError?: string
+  visibleMessages: WebMessage[]
+  adapterVersion?: string
+  lastSyncedAt?: number
+  lastOpenedAt?: number
+  pageTitle?: string
+  pendingRequestId?: string
+  draft?: string
+}
+
 export interface DocumentNodeData extends Record<string, unknown> {
   kind: 'document'
   title: string
@@ -80,8 +128,8 @@ export interface DocumentNodeData extends Record<string, unknown> {
   viewMode?: TextLayer
 }
 
-export type CanvasNodeData = ChatNodeData | DocumentNodeData
-export type CanvasNode = Node<CanvasNodeData, 'chat' | 'document'>
+export type CanvasNodeData = ChatNodeData | DocumentNodeData | WebNodeData
+export type CanvasNode = Node<CanvasNodeData, 'chat' | 'document' | 'web'>
 
 export interface ApiConfig {
   baseUrl: string
@@ -89,7 +137,7 @@ export interface ApiConfig {
   providerLabel: string
 }
 
-export type SettingsSection = 'model' | 'ocr' | 'display'
+export type SettingsSection = 'model' | 'ocr' | 'agent' | 'display'
 
 export interface CanvasViewport extends Viewport {
   x: number
@@ -109,6 +157,7 @@ export interface SourceJumpRequest {
 export const NODE_SIZES = {
   chat: { width: 480, height: 560, minWidth: 320, minHeight: 280 },
   document: { width: 640, height: 720, minWidth: 380, minHeight: 360 },
+  web: { width: 520, height: 560, minWidth: 360, minHeight: 320 },
 } as const
 
 export const DEFAULT_API_CONFIG: ApiConfig = {

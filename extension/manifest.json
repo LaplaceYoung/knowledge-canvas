@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Knowledge Canvas Bridge",
+  "version": "0.1.0",
+  "description": "Connects Knowledge Canvas Web nodes to real ChatGPT and DeepSeek tabs without reading cookies.",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1E+27nI8cq2STUuuBLasAuki+RzU8zYseN/xYS4arSsmZPp7UiROZkTQKjJlqO1v3P4fwQaOrHsCPkSdc2p4b2jWFanhfna9XtfKOgwnwvrGjtI6/X+GnC0mGQq9OoIUTvSzyH0XSAKyhfz8zlr0UIJmsV5rkOA40xdeDEqHVrvgZICmkoWdD97rFk0hMsqctXRXnEY9nxvdpIAvjjD4UgXRliLXrW9e0IohdtfQlm80kSkUAdQpZ0fx6gFUUDtavoRg7qzycIonERGbmo/kNB4sjhnqPDslpmnYfbZrJqPXqrj269kFY6XIoYtwWYUhS2GXBNRk5M5CNRoQTt7/CwIDAQAB",
+  "permissions": ["tabs", "storage"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://chat.deepseek.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "js": ["content/chatgpt.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:3000/*",
+      "http://127.0.0.1:3000/*",
+      "http://localhost:4173/*",
+      "http://127.0.0.1:4173/*"
+    ]
+  },
+  "action": {
+    "default_title": "Knowledge Canvas Bridge"
+  }
+}
