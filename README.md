@@ -46,7 +46,7 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
 | **PaddleOCR** | Keep scanned PDFs, render pages locally, call PaddleOCR cloud or self-hosted PaddleX, and anchor recognized text to page numbers. |
 | **Web nodes** | Bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, or Kimi tabs through a browser extension. Prompt and read visible messages inside the node, with provider-specific model, thinking, and search controls. |
 | **BYOK models** | OpenAI-compatible `/chat/completions` endpoints, including local model servers, through a same-origin proxy that avoids browser CORS failures. |
-| **Node menu** | Double-click blank canvas space to connect a provider from an official-logo menu. New chats and document imports stay in the top bar. |
+| **Node menu** | Double-click blank canvas space for New chat, Upload file, or Web node. Web node opens an official-logo provider submenu on hover. |
 | **Dark, restrained UI** | shadcn/ui controls, assistant-ui primitives, hairline borders, one blue accent, and 12–20px reading text. |
 | **Local-first storage** | Canvas state in local storage, PDF binaries in IndexedDB, API keys only in `sessionStorage`. |
 

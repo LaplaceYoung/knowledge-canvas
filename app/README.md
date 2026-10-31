@@ -32,7 +32,7 @@ npm run dev
 
 ## Web 节点
 
-Web 节点不嵌入 iframe。它通过 `extension/` 中的 Chromium 扩展联动真实网页标签页。双击画布空白处打开新增节点菜单，支持 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi，Provider 使用官方品牌 logo 标识：
+Web 节点不嵌入 iframe。它通过 `extension/` 中的 Chromium 扩展联动真实网页标签页。双击画布空白处打开新增节点菜单，可新建对话、上传文件，或在 Web 节点的二级菜单中选择 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi：
 
 1. 在 `chrome://extensions` 打开开发者模式；
 2. Load unpacked，选择仓库里的 `extension/`；

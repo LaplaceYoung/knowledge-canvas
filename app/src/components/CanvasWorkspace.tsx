@@ -84,6 +84,7 @@ function CanvasNavigation() {
 export function CanvasWorkspace() {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingImportPointRef = useRef<CreateMenuPosition | null>(null)
   const lastPaneClickRef = useRef<{ time: number; x: number; y: number } | null>(null)
   const [panMode, setPanMode] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -142,6 +143,18 @@ export function CanvasWorkspace() {
     })
   }, [addChatNode, centerPoint, screenToFlowPosition])
 
+  const createChatAtPoint = useCallback(
+    (position: CreateMenuPosition) => {
+      const point = screenToFlowPosition(position)
+      addChatNode({
+        x: point.x - NODE_SIZES.chat.width / 2,
+        y: point.y - NODE_SIZES.chat.height / 2,
+      })
+      setCreateMenu(null)
+    },
+    [addChatNode, screenToFlowPosition],
+  )
+
   const openCreateMenu = useCallback(
     (position?: CreateMenuPosition) => {
       setCreateMenu(position ?? centerPoint())
@@ -164,6 +177,12 @@ export function CanvasWorkspace() {
     },
     [addWebNode, screenToFlowPosition],
   )
+
+  const importAtPoint = useCallback((position: CreateMenuPosition) => {
+    pendingImportPointRef.current = position
+    setCreateMenu(null)
+    fileInputRef.current?.click()
+  }, [])
 
   const importFiles = useCallback(
     async (files: File[], clientPoint?: { x: number; y: number }) => {
@@ -212,6 +231,7 @@ export function CanvasWorkspace() {
   )
 
   const openFilePicker = useCallback(() => {
+    pendingImportPointRef.current = null
     fileInputRef.current?.click()
   }, [])
 
@@ -405,7 +425,8 @@ export function CanvasWorkspace() {
           onChange={(event) => {
             const files = Array.from(event.target.files ?? [])
             event.currentTarget.value = ''
-            void importFiles(files)
+            void importFiles(files, pendingImportPointRef.current ?? undefined)
+            pendingImportPointRef.current = null
           }}
         />
 
@@ -413,6 +434,8 @@ export function CanvasWorkspace() {
           <NodeCreateMenu
             position={createMenu}
             onClose={closeCreateMenu}
+            onCreateChat={createChatAtPoint}
+            onImport={importAtPoint}
             onCreateWeb={createWebAtPoint}
           />
         )}

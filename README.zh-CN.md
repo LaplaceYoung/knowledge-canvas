@@ -45,7 +45,7 @@ Knowledge Canvas 把这些关系放进空间里：
 | **PaddleOCR** | 保留扫描 PDF，在浏览器逐页渲染，通过云端或自建 PaddleX 识别，并按页保存。 |
 | **Web 节点** | 通过浏览器扩展绑定真实 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi 标签页；节点内提问、读取可见消息，并按网页能力调整模型、思考与联网控制。 |
 | **BYOK 模型** | 任意 OpenAI-compatible `/chat/completions` 接口，经同源代理调用，避免浏览器 CORS 失败。 |
-| **新增节点菜单** | 双击画布空白处，从带官方 logo 的菜单连接 Web Provider；新建对话和导入文档保留在顶栏。 |
+| **新增节点菜单** | 双击画布空白处，选择新建对话、上传文件或 Web 节点；Web 节点悬停展开带官方 logo 的 Provider 二级菜单。 |
 | **深色阅读界面** | shadcn/ui + assistant-ui，细边框、单一蓝色强调色，正文 12–20px 可调。 |
 | **本地优先存储** | 画布在 localStorage，PDF 二进制在 IndexedDB，密钥只在 `sessionStorage`。 |
 
