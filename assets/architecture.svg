@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="540" viewBox="0 0 1000 540" role="img" aria-labelledby="title desc">
+  <title id="title">Knowledge Canvas architecture</title>
+  <desc id="desc">A pure-web canvas connects to a same-origin Node server, which calls model, OCR and local ACP agent services. A browser extension bridges the canvas to real ChatGPT and DeepSeek tabs without reading cookies.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7b8493"/>
+    </marker>
+    <style>
+      .box { fill: #171a1f; stroke: #323741; stroke-width: 1; }
+      .accent { fill: #101318; stroke: #4f7fca; stroke-width: 1.5; }
+      .title { fill: #f0f1f3; font: 600 17px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .label { fill: #aab1bc; font: 13px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .small { fill: #7f8895; font: 12px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .accentText { fill: #a9c4ef; font: 600 13px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .line { stroke: #5c6572; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 5 5; }
+      .tag { fill: #1f242b; stroke: #3b424d; stroke-width: 1; }
+      .tagText { fill: #c4cad3; font: 12px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="540" rx="16" fill="#0e1013"/>
+  <text x="40" y="46" class="title" style="font-size:22px">Knowledge Canvas architecture</text>
+  <text x="40" y="70" class="label">Pure web workspace, same-origin services, browser extension for real AI tabs</text>
+
+  <rect x="40" y="104" width="260" height="104" rx="10" class="accent"/>
+  <text x="62" y="136" class="accentText">Knowledge Canvas</text>
+  <text x="62" y="161" class="label">React + React Flow + assistant-ui</text>
+  <text x="62" y="183" class="small">Canvas state is the source of truth</text>
+
+  <rect x="370" y="104" width="260" height="104" rx="10" class="box"/>
+  <text x="392" y="136" class="title">Same-origin server</text>
+  <text x="392" y="161" class="label">/api/chat · /api/ocr · /api/agent</text>
+  <text x="392" y="183" class="small">Vite middleware or server.mjs</text>
+
+  <rect x="700" y="104" width="260" height="104" rx="10" class="box"/>
+  <text x="722" y="136" class="title">Cloud or self-hosted</text>
+  <text x="722" y="161" class="label">OpenAI-compatible model API</text>
+  <text x="722" y="183" class="small">PaddleOCR cloud or PaddleX</text>
+
+  <rect x="40" y="330" width="260" height="104" rx="10" class="box"/>
+  <text x="62" y="362" class="title">Browser extension</text>
+  <text x="62" y="387" class="label">Fixed command allowlist</text>
+  <text x="62" y="409" class="small">No cookies · no private APIs</text>
+
+  <rect x="370" y="330" width="260" height="104" rx="10" class="box"/>
+  <text x="392" y="362" class="title">Real provider tabs</text>
+  <text x="392" y="387" class="label">ChatGPT new-session mirror</text>
+  <text x="392" y="409" class="small">DeepSeek linked-tab mode</text>
+
+  <rect x="700" y="330" width="260" height="104" rx="10" class="box"/>
+  <text x="722" y="362" class="title">Local ACP agent</text>
+  <text x="722" y="387" class="label">Server-side preflight today</text>
+  <text x="722" y="409" class="small">Session execution is next</text>
+
+  <path d="M 300 156 L 362 156" class="line"/>
+  <text x="310" y="144" class="small">HTTP / SSE</text>
+
+  <path d="M 630 156 L 692 156" class="line"/>
+  <text x="640" y="144" class="small">proxy</text>
+
+  <path d="M 170 208 L 170 322" class="line dashed"/>
+  <text x="182" y="268" class="small">external messaging</text>
+
+  <path d="M 300 382 L 362 382" class="line"/>
+  <text x="304" y="370" class="small">DOM mirror</text>
+
+  <path d="M 500 208 L 500 322" class="line dashed"/>
+  <text x="512" y="268" class="small">spawn / JSON-RPC</text>
+
+  <g transform="translate(40 472)">
+    <rect width="128" height="28" rx="6" class="tag"/>
+    <text x="14" y="19" class="tagText">solid · network</text>
+    <rect x="146" width="176" height="28" rx="6" class="tag"/>
+    <text x="160" y="19" class="tagText">dashed · local / browser</text>
+    <text x="780" y="19" class="small">No iframe · no credentials</text>
+  </g>
+</svg>

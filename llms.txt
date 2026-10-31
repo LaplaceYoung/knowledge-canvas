@@ -1,0 +1,60 @@
+# Knowledge Canvas
+
+> Knowledge Canvas is an open-source, local-first AI learning workspace built on an infinite canvas. It organizes branching AI conversations, PDFs, Markdown, OCR text, and mirrored real ChatGPT / DeepSeek web sessions in one spatial workspace.
+
+- Repository: https://github.com/LaplaceYoung/knowledge-canvas
+- License: MIT
+- Status: alpha / self-hosted
+- Stack: React 19, TypeScript, Vite, React Flow, assistant-ui, shadcn/ui
+
+## What it does
+
+Knowledge Canvas preserves the source relationship between a question and the material that produced it. A user can select text from an AI answer, PDF, Markdown, TXT, or OCR result, then create a follow-up chat branch that retains the quoted passage and source location.
+
+Core capabilities:
+
+- Infinite canvas with pan, zoom, resize, minimap, and semantic zoom.
+- Branching AI chat with streaming, stop, retry, Markdown, GFM, LaTeX, and code copy.
+- PDF, Markdown, and TXT document nodes.
+- Scanned PDF OCR through PaddleOCR cloud or self-hosted PaddleX, with page-anchored results.
+- Web nodes that bind real ChatGPT / DeepSeek tabs through a Chrome extension. ChatGPT new sessions can mirror visible messages. DeepSeek is linked-tab only.
+- BYOK OpenAI-compatible model endpoints through a same-origin proxy.
+- Session-only API keys, local canvas persistence, and no cookie access by the extension.
+- ACP local-agent connection preflight; full agent chat execution is not yet implemented.
+
+## Architecture
+
+The browser app talks to a same-origin Node/Vite server for model, OCR, and agent routes. A browser extension bridges the canvas to real provider tabs with a fixed command allowlist. Web nodes are not iframes.
+
+## Quick start
+
+```bash
+git clone https://github.com/LaplaceYoung/knowledge-canvas.git
+cd knowledge-canvas/app
+npm install
+npm run dev
+```
+
+Open http://127.0.0.1:3000. Load the unpacked extension from the repository's `extension/` directory for Web nodes.
+
+Production-style server:
+
+```bash
+npm run build
+npm start
+```
+
+## Security boundaries
+
+- The extension does not read cookies, authorization headers, or provider tokens.
+- Provider credentials are not written to the canvas.
+- A public deployment must add authentication and rate limiting to `/api/*`.
+- "Local canvas" does not imply local model inference.
+
+## English README
+
+https://github.com/LaplaceYoung/knowledge-canvas/blob/main/README.md
+
+## Chinese README
+
+https://github.com/LaplaceYoung/knowledge-canvas/blob/main/README.zh-CN.md

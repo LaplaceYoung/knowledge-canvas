@@ -50,7 +50,7 @@ KC_ACP_ARGS=[]
 KC_ACP_CWD=/absolute/workspace/path
 ```
 
-当前预检会启动一个 Agent 进程并完成初始化/会话创建，随后退出；尚未把 Agent 接入普通对话执行。设计边界见 `docs/local-agent-integration.md`。
+当前预检会启动一个 Agent 进程并完成初始化/会话创建，随后退出；尚未把 Agent 接入普通对话执行。实现边界见 `server/agent-bridge.mjs`。
 
 ## 阅读字号
 
