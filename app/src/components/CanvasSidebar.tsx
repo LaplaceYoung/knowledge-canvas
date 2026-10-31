@@ -136,7 +136,14 @@ export function CanvasSidebar() {
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex h-12 shrink-0 items-center border-b border-sidebar-border px-3 text-sm font-semibold tracking-tight">
+      <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-3 text-sm font-semibold tracking-tight">
+        <img
+          src="/brand/icon.svg"
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className="size-6 shrink-0"
+        />
         Knowledge Canvas
       </div>
 

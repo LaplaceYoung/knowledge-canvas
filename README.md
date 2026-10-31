@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./app/public/brand/icon.svg" alt="Knowledge Canvas icon" width="72" height="72" />
+
 # Knowledge Canvas
 
 **An open-source, local-first AI learning workspace built on an infinite canvas.**

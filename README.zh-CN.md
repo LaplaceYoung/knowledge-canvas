@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./app/public/brand/icon.svg" alt="Knowledge Canvas 图标" width="72" height="72" />
+
 # Knowledge Canvas
 
 **开源、本地优先的 AI 学习工作台，以无限画布组织对话、文档、OCR 和真实网页会话。**
