@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
-import { FileText, GitBranch, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
+import { FileText, GitBranch, Maximize2, MessageSquare, Plus, Trash2, X } from 'lucide-react'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode } from '@/types/canvas'
 import { formatSourcePage } from '@/lib/context'
@@ -116,15 +116,17 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
             (selected || mode === 'focus') && 'opacity-100',
           )}
         >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="引出下游节点"
-            aria-label="引出下游节点"
-            onClick={() => createFork(node.id)}
-          >
-            <GitBranch />
-          </Button>
+          {mode === 'focus' && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="引出下游节点"
+              aria-label="引出下游节点"
+              onClick={() => createFork(node.id)}
+            >
+              <GitBranch />
+            </Button>
+          )}
           {mode === 'canvas' ? (
             <>
               <Button
@@ -168,6 +170,23 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
           )}
         </div>
       </header>
+
+      {mode === 'canvas' && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          className="nodrag absolute right-1.5 top-1/2 z-20 size-7 -translate-y-1/2 rounded-full bg-card opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+          title="引出下游节点"
+          aria-label="引出下游节点"
+          onClick={(event) => {
+            event.stopPropagation()
+            createFork(node.id)
+          }}
+        >
+          <Plus className="size-3.5" />
+        </Button>
+      )}
 
       {source && (
         <button
