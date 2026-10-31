@@ -17,7 +17,7 @@ import { toast } from 'sonner'
 import ChatNode from '@/components/ChatNode'
 import DocumentNode from '@/components/DocumentNode'
 import WebNode from '@/components/WebNode'
-import { WebNodeDialog } from '@/components/WebNodeDialog'
+import { NodeCreateMenu, type CreateMenuPosition } from '@/components/NodeCreateMenu'
 import { ToolRail } from '@/components/ToolRail'
 import { TopBar } from '@/components/TopBar'
 import { Button } from '@/components/ui/button'
@@ -88,9 +88,11 @@ function CanvasNavigation() {
 export function CanvasWorkspace() {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingImportPointRef = useRef<CreateMenuPosition | null>(null)
+  const lastPaneClickRef = useRef<{ time: number; x: number; y: number } | null>(null)
   const [panMode, setPanMode] = useState(false)
   const [dragActive, setDragActive] = useState(false)
-  const [webDialogOpen, setWebDialogOpen] = useState(false)
+  const [createMenu, setCreateMenu] = useState<CreateMenuPosition | null>(null)
   const [zoom, setZoom] = useState(1)
   const [zoomTier, setZoomTier] = useState<'detail' | 'overview' | 'map'>('detail')
   const nodes = useCanvasStore((state) => state.nodes)
@@ -145,18 +147,46 @@ export function CanvasWorkspace() {
     })
   }, [addChatNode, centerPoint, screenToFlowPosition])
 
-  const createWebAtCenter = useCallback(
-    (providerId: WebProviderId) => {
-      const point = screenToFlowPosition(centerPoint())
+  const openCreateMenu = useCallback(
+    (position?: CreateMenuPosition) => {
+      setCreateMenu(position ?? centerPoint())
+      setSelectedNodeId(null)
+    },
+    [centerPoint, setSelectedNodeId],
+  )
+
+  const closeCreateMenu = useCallback(() => setCreateMenu(null), [])
+
+  const createChatAtPoint = useCallback(
+    (position: CreateMenuPosition) => {
+      const point = screenToFlowPosition(position)
+      addChatNode({
+        x: point.x - NODE_SIZES.chat.width / 2,
+        y: point.y - NODE_SIZES.chat.height / 2,
+      })
+      setCreateMenu(null)
+    },
+    [addChatNode, screenToFlowPosition],
+  )
+
+  const createWebAtPoint = useCallback(
+    (providerId: WebProviderId, position: CreateMenuPosition) => {
+      const point = screenToFlowPosition(position)
       const id = addWebNode(providerId, {
         x: point.x - NODE_SIZES.web.width / 2,
         y: point.y - NODE_SIZES.web.height / 2,
       })
-      setWebDialogOpen(false)
+      setCreateMenu(null)
       void connectWebNode(id)
     },
-    [addWebNode, centerPoint, screenToFlowPosition],
+    [addWebNode, screenToFlowPosition],
   )
+
+  const importAtPoint = useCallback((position: CreateMenuPosition) => {
+    pendingImportPointRef.current = position
+    setCreateMenu(null)
+    fileInputRef.current?.click()
+  }, [])
 
   const importFiles = useCallback(
     async (files: File[], clientPoint?: { x: number; y: number }) => {
@@ -204,7 +234,10 @@ export function CanvasWorkspace() {
     [addDocumentNode, centerPoint, failDocumentImport, finishDocumentImport, ocrConfig.autoRun, screenToFlowPosition],
   )
 
-  const openFilePicker = useCallback(() => fileInputRef.current?.click(), [])
+  const openFilePicker = useCallback(() => {
+    pendingImportPointRef.current = null
+    fileInputRef.current?.click()
+  }, [])
 
   useEffect(() => {
     if (!revealNodeId) return
@@ -262,7 +295,7 @@ export function CanvasWorkspace() {
       }
       if (event.key.toLowerCase() === 'w') {
         event.preventDefault()
-        setWebDialogOpen(true)
+        openCreateMenu()
       }
       if (event.key.toLowerCase() === 'f') {
         event.preventDefault()
@@ -282,7 +315,7 @@ export function CanvasWorkspace() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [createChatAtCenter, fitView, getZoom, nodes, openFilePicker, setCenter])
+  }, [createChatAtCenter, fitView, getZoom, nodes, openCreateMenu, openFilePicker, setCenter])
 
   return (
     <div
@@ -340,7 +373,22 @@ export function CanvasWorkspace() {
           }}
           onMoveEnd={(_, nextViewport) => setViewport(nextViewport)}
           onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-          onPaneClick={() => setSelectedNodeId(null)}
+          onPaneClick={(event) => {
+            setSelectedNodeId(null)
+            const now = Date.now()
+            const previous = lastPaneClickRef.current
+            if (
+              previous &&
+              now - previous.time < 320 &&
+              Math.abs(previous.x - event.clientX) < 6 &&
+              Math.abs(previous.y - event.clientY) < 6
+            ) {
+              lastPaneClickRef.current = null
+              openCreateMenu({ x: event.clientX, y: event.clientY })
+              return
+            }
+            lastPaneClickRef.current = { time: now, x: event.clientX, y: event.clientY }
+          }}
           onNodeDoubleClick={(event, node) => {
             const target = event.target as HTMLElement
             if (target.closest('input, textarea, button, a')) return
@@ -360,7 +408,7 @@ export function CanvasWorkspace() {
               panMode={panMode}
               onPanModeChange={setPanMode}
               onNewChat={createChatAtCenter}
-              onNewWeb={() => setWebDialogOpen(true)}
+              onCreate={() => openCreateMenu()}
               onImport={openFilePicker}
               onFit={() => fitView({ padding: 0.18, duration: 220, maxZoom: 1 })}
               hasNodes={nodes.length > 0}
@@ -380,15 +428,15 @@ export function CanvasWorkspace() {
               <Button variant="outline" onClick={openFilePicker}>
                 导入文档
               </Button>
-              <Button variant="outline" onClick={() => setWebDialogOpen(true)}>
-                新建 Web 节点
+              <Button variant="outline" onClick={() => openCreateMenu()}>
+                新增节点
               </Button>
             </div>
             <div className="mt-8 hidden max-w-sm flex-wrap items-center gap-4 border-t pt-3 text-xs text-muted-foreground sm:flex">
               <span>Space 拖动画布</span>
+              <span>双击空白新增节点</span>
               <span>C 新建对话</span>
-              <span>D 导入文档</span>
-              <span>W 新建 Web 节点</span>
+              <span>W 打开菜单</span>
             </div>
           </div>
         )}
@@ -409,15 +457,20 @@ export function CanvasWorkspace() {
           onChange={(event) => {
             const files = Array.from(event.target.files ?? [])
             event.currentTarget.value = ''
-            void importFiles(files)
+            void importFiles(files, pendingImportPointRef.current ?? undefined)
+            pendingImportPointRef.current = null
           }}
         />
 
-        <WebNodeDialog
-          open={webDialogOpen}
-          onOpenChange={setWebDialogOpen}
-          onCreate={createWebAtCenter}
-        />
+        {createMenu && (
+          <NodeCreateMenu
+            position={createMenu}
+            onClose={closeCreateMenu}
+            onCreateChat={createChatAtPoint}
+            onImport={importAtPoint}
+            onCreateWeb={createWebAtPoint}
+          />
+        )}
       </div>
     </div>
   )

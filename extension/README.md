@@ -4,9 +4,9 @@ Chrome / Chromium MV3 extension for Web nodes.
 
 It lets the canvas:
 
-- open, focus, and bind real ChatGPT / DeepSeek tabs;
+- open, focus, and bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi tabs;
 - for a **new ChatGPT session only**, submit a prompt through the normal page composer and mirror the visible new messages back to the node;
-- leave DeepSeek in linked-tab mode. No page reading, auto-submit, or background history capture.
+- leave all other providers in linked-tab mode. No page reading, auto-submit, or background history capture.
 
 It never reads cookies, authorization headers, or provider tokens, and it does not call private APIs.
 
@@ -32,6 +32,7 @@ The canvas already uses this ID. If you publish a different build with another k
 ## Provider notes
 
 - **ChatGPT**: mirror adapter is version `chatgpt-dom-0.1`. It is DOM-dependent and can degrade when the provider changes its page; the node falls back to “open original page”.
-- **DeepSeek**: linked tab only until its terms and adapter are explicitly approved.
+- **Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, Kimi**: linked-tab only. The extension opens, focuses, and binds the real page, but does not read or submit page content.
+- A provider capability is never inferred from another provider. Each new mirror adapter needs its own validation.
 
 The extension only executes a fixed command allowlist. It rejects unknown commands, non-allowlisted canvas origins, provider URLs outside the allowlist, and duplicate tab bindings.

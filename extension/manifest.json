@@ -1,15 +1,25 @@
 {
   "manifest_version": 3,
   "name": "Knowledge Canvas Bridge",
-  "version": "0.1.0",
-  "description": "Connects Knowledge Canvas Web nodes to real ChatGPT and DeepSeek tabs without reading cookies.",
+  "version": "0.2.0",
+  "description": "Connects Knowledge Canvas Web nodes to real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi tabs without reading cookies.",
   "minimum_chrome_version": "116",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1E+27nI8cq2STUuuBLasAuki+RzU8zYseN/xYS4arSsmZPp7UiROZkTQKjJlqO1v3P4fwQaOrHsCPkSdc2p4b2jWFanhfna9XtfKOgwnwvrGjtI6/X+GnC0mGQq9OoIUTvSzyH0XSAKyhfz8zlr0UIJmsV5rkOA40xdeDEqHVrvgZICmkoWdD97rFk0hMsqctXRXnEY9nxvdpIAvjjD4UgXRliLXrW9e0IohdtfQlm80kSkUAdQpZ0fx6gFUUDtavoRg7qzycIonERGbmo/kNB4sjhnqPDslpmnYfbZrJqPXqrj269kFY6XIoYtwWYUhS2GXBNRk5M5CNRoQTt7/CwIDAQAB",
   "permissions": ["tabs", "storage"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
-    "https://chat.deepseek.com/*"
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://grok.com/*",
+    "https://chat.deepseek.com/*",
+    "https://www.doubao.com/*",
+    "https://doubao.com/*",
+    "https://www.qwen.com/*",
+    "https://qwen.com/*",
+    "https://chat.qwen.ai/*",
+    "https://www.kimi.com/*",
+    "https://kimi.com/*"
   ],
   "background": {
     "service_worker": "background.js",

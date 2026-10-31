@@ -43,8 +43,9 @@ Knowledge Canvas 把这些关系放进空间里：
 | **来源锚点** | 每个追问保留引用文本、父消息或页码，可回到原文并恢复高亮。 |
 | **文档阅读** | PDF、Markdown、TXT 只读节点，支持文本选择与本地保存。 |
 | **PaddleOCR** | 保留扫描 PDF，在浏览器逐页渲染，通过云端或自建 PaddleX 识别，并按页保存。 |
-| **Web 节点** | 通过浏览器扩展绑定真实 ChatGPT / DeepSeek 标签页；ChatGPT 新会话支持节点内提问与可见消息镜像。 |
+| **Web 节点** | 通过浏览器扩展绑定真实 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi 标签页；ChatGPT 新会话支持节点内提问与可见消息镜像。 |
 | **BYOK 模型** | 任意 OpenAI-compatible `/chat/completions` 接口，经同源代理调用，避免浏览器 CORS 失败。 |
+| **新增节点菜单** | 双击画布空白处，直接新建对话、导入文档，或从带官方 logo 的菜单选择 Web Provider。 |
 | **深色阅读界面** | shadcn/ui + assistant-ui，细边框、单一蓝色强调色，正文 12–20px 可调。 |
 | **本地优先存储** | 画布在 localStorage，PDF 二进制在 IndexedDB，密钥只在 `sessionStorage`。 |
 
@@ -58,6 +59,13 @@ Knowledge Canvas 把这些关系放进空间里：
       <sub><strong>Web 节点</strong> — 网页会话镜像与节点内输入框。</sub>
     </td>
     <td width="50%">
+      <img src="./assets/provider-menu.png" alt="Knowledge Canvas 新增节点菜单，包含 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen 和 Kimi 官方 logo" width="100%" />
+      <br />
+      <sub><strong>新增节点菜单</strong> — 双击画布空白处选择节点类型。</sub>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
       <img src="./assets/architecture.svg" alt="Knowledge Canvas 架构：Web 应用、同源服务、浏览器扩展、真实网页标签页、PaddleOCR 与本机 ACP Agent" width="100%" />
       <br />
       <sub><strong>架构</strong> — 同源服务与明确的浏览器边界。</sub>
@@ -146,13 +154,15 @@ Knowledge Canvas（浏览器） ── 同源 HTTP/SSE ──> server.mjs / Vite
 
 ## Web 节点
 
-Web 节点不是 iframe，而是绑定真实网页标签页的画布节点。
+Web 节点不是 iframe，而是绑定真实网页标签页的画布节点。双击画布空白处打开新增节点菜单，Provider 使用官方品牌 logo 标识。
+
+支持的 Provider：**ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi**。
 
 - **ChatGPT**：新会话可通过 DOM 镜像适配器，在真实网页输入框提交，只观察新产生的可见消息，再镜像回节点。使用网页账户额度，不调用 BYOK Key。
-- **DeepSeek**：当前仅标签页联动，不开放自动读取或自动提交。
+- **其他 Provider**：标签页联动。节点负责打开、聚焦和绑定真实网页，不自动读取或自动提交页面内容。
 - **降级**：未安装扩展、页面变化或绑定失效时，节点退回真实网页入口；提交未知状态不会被假装成成功。
 
-适配器已在本地 DOM fixture 中验证；真实 provider 页面改版仍可能导致选择器失效。详见 [`extension/README.md`](./extension/README.md)。
+ChatGPT 适配器已在本地 DOM fixture 中验证；真实 provider 页面改版仍可能导致选择器失效。详见 [`extension/README.md`](./extension/README.md)。
 
 ## 本机 Agent (ACP)
 
@@ -243,6 +253,8 @@ Provider 特有逻辑请放在适配器后，尚未验证的能力要明确标�
 ## License
 
 MIT © LaplaceYoung，见 [LICENSE](./LICENSE)。
+
+Provider 名称与商标归各自所有者，仅用于标识被联动的真实网页服务。Logo 资源来自 MIT 许可的 [LobeHub Icons](https://github.com/lobehub/lobe-icons)，见 [`app/THIRD_PARTY_NOTICES.md`](./app/THIRD_PARTY_NOTICES.md)。
 
 <div align="center">
 <sub>无限画布 · AI 学习 · 分支对话 · PDF OCR · ChatGPT 网页镜像 · 自托管</sub>

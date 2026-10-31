@@ -44,8 +44,9 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
 | **Source-anchored branches** | Every follow-up keeps its quoted passage, parent message or page, and a return path to the source. |
 | **Documents** | Read-only PDF, Markdown, and TXT nodes with text selection and local persistence. |
 | **PaddleOCR** | Keep scanned PDFs, render pages locally, call PaddleOCR cloud or self-hosted PaddleX, and anchor recognized text to page numbers. |
-| **Web nodes** | Bind real ChatGPT / DeepSeek tabs through a browser extension. ChatGPT new sessions can mirror visible messages into the node. |
+| **Web nodes** | Bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, or Kimi tabs through a browser extension. ChatGPT new sessions can mirror visible messages into the node. |
 | **BYOK models** | OpenAI-compatible `/chat/completions` endpoints, including local model servers, through a same-origin proxy that avoids browser CORS failures. |
+| **Node menu** | Double-click blank canvas space to create a chat, import a document, or choose a provider from an official-logo menu. |
 | **Dark, restrained UI** | shadcn/ui controls, assistant-ui primitives, hairline borders, one blue accent, and 12–20px reading text. |
 | **Local-first storage** | Canvas state in local storage, PDF binaries in IndexedDB, API keys only in `sessionStorage`. |
 
@@ -59,6 +60,13 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
       <sub><strong>Web node</strong> — a mirrored ChatGPT session with a node-level composer.</sub>
     </td>
     <td width="50%">
+      <img src="./assets/provider-menu.png" alt="Knowledge Canvas new node menu with official ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi logos" width="100%" />
+      <br />
+      <sub><strong>Provider menu</strong> — double-click blank canvas space to pick a node type.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
       <img src="./assets/architecture.svg" alt="Knowledge Canvas architecture: web app, same-origin server, browser extension, real provider tabs, PaddleOCR, and local ACP agent" width="100%" />
       <br />
       <sub><strong>Architecture</strong> — same-origin services plus explicit browser boundaries.</sub>
@@ -156,13 +164,15 @@ The browser extension is intentionally narrow:
 
 ## Web nodes
 
-A Web node is **not an iframe**. It is a canvas node bound to a real provider tab.
+A Web node is **not an iframe**. It is a canvas node bound to a real provider tab. Double-click blank canvas space to open the new-node menu; official provider marks are used for identification.
+
+Supported providers: **ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi**.
 
 - **ChatGPT**: a new session can use the DOM mirror adapter. The node sends a prompt through the normal webpage composer, observes only the new visible messages, and mirrors them back. This uses the webpage account/quota, not the BYOK key.
-- **DeepSeek**: linked-tab mode only until its terms and adapter are explicitly reviewed. The node opens and focuses the real page; it does not auto-read or auto-submit.
+- **Other providers**: linked-tab mode. The node opens, focuses, and binds the real page; it does not auto-read or auto-submit page content.
 - **Fallback**: without the extension, or when a provider page changes, the node remains a real-page shortcut. Lost bindings and unknown submit states are shown explicitly, never treated as success.
 
-The adapter is tested against a local DOM fixture. Live provider DOM changes can still require selector updates. See [`extension/README.md`](./extension/README.md).
+The ChatGPT adapter is tested against a local DOM fixture. Live provider DOM changes can still require selector updates. See [`extension/README.md`](./extension/README.md).
 
 ## Local Agent (ACP)
 
@@ -253,6 +263,8 @@ Keep provider-specific behavior behind adapters and document any capability that
 ## License
 
 MIT © LaplaceYoung. See [LICENSE](./LICENSE).
+
+Provider names and marks are trademarks of their respective owners and are used only to identify the linked real web services. Logo assets are sourced from the MIT-licensed [LobeHub Icons](https://github.com/lobehub/lobe-icons) set; see [`app/THIRD_PARTY_NOTICES.md`](./app/THIRD_PARTY_NOTICES.md).
 
 <div align="center">
 <sub>Infinite canvas · AI learning · branching chat · PDF OCR · ChatGPT web mirror · self-hosted</sub>

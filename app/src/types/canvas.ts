@@ -59,7 +59,15 @@ export interface OcrConfig {
   autoRun: boolean
 }
 
-export type WebProviderId = 'chatgpt' | 'deepseek'
+export type WebProviderId =
+  | 'chatgpt'
+  | 'claude'
+  | 'gemini'
+  | 'grok'
+  | 'deepseek'
+  | 'doubao'
+  | 'qwen'
+  | 'kimi'
 export type WebBindingState =
   | 'unbound'
   | 'opening'

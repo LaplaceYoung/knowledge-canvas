@@ -1,4 +1,4 @@
-const EXTENSION_VERSION = '0.1.0'
+const EXTENSION_VERSION = '0.2.0'
 const BINDINGS_KEY = 'knowledge_canvas_web_bindings_v1'
 const ALLOWED_CANVAS_ORIGINS = new Set([
   'http://localhost:3000',
@@ -15,10 +15,46 @@ const PROVIDERS = {
     mirrorSupported: true,
     adapterVersion: 'chatgpt-dom-0.1',
   },
+  claude: {
+    id: 'claude',
+    homeUrl: 'https://claude.ai/new',
+    origins: ['https://claude.ai'],
+    mirrorSupported: false,
+  },
+  gemini: {
+    id: 'gemini',
+    homeUrl: 'https://gemini.google.com/app',
+    origins: ['https://gemini.google.com'],
+    mirrorSupported: false,
+  },
+  grok: {
+    id: 'grok',
+    homeUrl: 'https://grok.com/',
+    origins: ['https://grok.com'],
+    mirrorSupported: false,
+  },
   deepseek: {
     id: 'deepseek',
     homeUrl: 'https://chat.deepseek.com/',
     origins: ['https://chat.deepseek.com'],
+    mirrorSupported: false,
+  },
+  doubao: {
+    id: 'doubao',
+    homeUrl: 'https://www.doubao.com/chat/',
+    origins: ['https://www.doubao.com', 'https://doubao.com'],
+    mirrorSupported: false,
+  },
+  qwen: {
+    id: 'qwen',
+    homeUrl: 'https://www.qwen.com/',
+    origins: ['https://www.qwen.com', 'https://qwen.com', 'https://chat.qwen.ai'],
+    mirrorSupported: false,
+  },
+  kimi: {
+    id: 'kimi',
+    homeUrl: 'https://www.kimi.com/',
+    origins: ['https://www.kimi.com', 'https://kimi.com'],
     mirrorSupported: false,
   },
 }

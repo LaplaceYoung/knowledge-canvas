@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { NodeResizer, type NodeProps } from '@xyflow/react'
 import {
   ExternalLink,
-  Globe2,
   Link2,
   LoaderCircle,
   RefreshCw,
@@ -11,6 +10,7 @@ import {
 import { toast } from 'sonner'
 import { Markdown } from '@/components/Markdown'
 import { NodeShell } from '@/components/NodeShell'
+import { ProviderLogo } from '@/components/ProviderLogo'
 import { Button } from '@/components/ui/button'
 import {
   bindCurrentWebNode,
@@ -121,7 +121,7 @@ export function WebBody({ node }: WebBodyProps) {
     <div className="web-body flex min-h-0 flex-1 flex-col">
       <div className="web-toolbar flex h-9 flex-none items-center gap-1.5 border-b px-2">
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <Globe2 className="size-3.5 shrink-0" />
+          <ProviderLogo providerId={data.providerId} className="size-3.5" />
           <span className="shrink-0 text-foreground">{provider.label}</span>
           <span className="hidden text-border sm:inline" aria-hidden="true">
             /
@@ -230,7 +230,7 @@ export function WebBody({ node }: WebBodyProps) {
         {!hasMessages ? (
           <div className="web-welcome flex flex-col items-start gap-3 px-4 py-5">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Globe2 className="size-4 text-muted-foreground" />
+              <ProviderLogo providerId={data.providerId} className="size-4" />
               {provider.label}
             </div>
             <p className="max-w-sm text-xs leading-5 text-muted-foreground">

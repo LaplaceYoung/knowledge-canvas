@@ -32,13 +32,13 @@ npm run dev
 
 ## Web 节点
 
-Web 节点不嵌入 iframe。它通过 `extension/` 中的 Chromium 扩展联动真实 ChatGPT / DeepSeek 标签页：
+Web 节点不嵌入 iframe。它通过 `extension/` 中的 Chromium 扩展联动真实网页标签页。双击画布空白处打开新增节点菜单，支持 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi，Provider 使用官方品牌 logo 标识：
 
 1. 在 `chrome://extensions` 打开开发者模式；
 2. Load unpacked，选择仓库里的 `extension/`；
-3. 回到画布创建 Web 节点。
+3. 回到画布双击空白处或点击工具条“新增节点”。
 
-ChatGPT 新会话可以尝试节点内提交和 DOM 镜像，只读取网页可见的新消息；DeepSeek 当前只做标签页联动。扩展不读取 Cookie、Authorization 或网页 token，也不调用私有 API。详细限制见 `extension/README.md`。
+ChatGPT 新会话可以尝试节点内提交和 DOM 镜像，只读取网页可见的新消息；其他 Provider 当前只做标签页联动。扩展不读取 Cookie、Authorization 或网页 token，也不调用私有 API。详细限制见 `extension/README.md`。
 
 ## 本机 Agent
 

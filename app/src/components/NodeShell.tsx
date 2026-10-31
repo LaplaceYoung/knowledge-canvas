@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
-import { FileText, Globe2, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
+import { FileText, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode } from '@/types/canvas'
 import { formatSourcePage } from '@/lib/context'
@@ -9,6 +9,7 @@ import { cancelDocumentOcr } from '@/lib/ocr-runner'
 import { openWebNodePage } from '@/lib/web-node-service'
 import { getWebProvider, webUrlLabel } from '@/lib/web-providers'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { ProviderLogo } from '@/components/ProviderLogo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,8 +100,8 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
       >
         {isChat ? (
           <MessageSquare className="size-3" />
-        ) : isWeb ? (
-          <Globe2 className="size-3" />
+        ) : webData ? (
+          <ProviderLogo providerId={webData.providerId} className="size-3" />
         ) : (
           <FileText className="size-3" />
         )}
@@ -111,8 +112,8 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
         <span className="grid size-6 shrink-0 place-items-center text-muted-foreground" aria-hidden="true">
           {isChat ? (
             <MessageSquare className="size-3.5" />
-          ) : isWeb ? (
-            <Globe2 className="size-3.5" />
+          ) : webData ? (
+            <ProviderLogo providerId={webData.providerId} className="size-3.5" />
           ) : (
             <FileText className="size-3.5" />
           )}

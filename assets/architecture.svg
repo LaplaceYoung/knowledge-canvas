@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="540" viewBox="0 0 1000 540" role="img" aria-labelledby="title desc">
   <title id="title">Knowledge Canvas architecture</title>
-  <desc id="desc">A pure-web canvas connects to a same-origin Node server, which calls model, OCR and local ACP agent services. A browser extension bridges the canvas to real ChatGPT and DeepSeek tabs without reading cookies.</desc>
+  <desc id="desc">A pure-web canvas connects to a same-origin Node server, which calls model, OCR and local ACP agent services. A browser extension bridges the canvas to eight real AI provider tabs; only ChatGPT supports DOM mirroring, without reading cookies.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#7b8493"/>
@@ -46,7 +46,7 @@
   <rect x="370" y="330" width="260" height="104" rx="10" class="box"/>
   <text x="392" y="362" class="title">Real provider tabs</text>
   <text x="392" y="387" class="label">ChatGPT new-session mirror</text>
-  <text x="392" y="409" class="small">DeepSeek linked-tab mode</text>
+  <text x="392" y="409" class="small">7 linked providers · no page reading</text>
 
   <rect x="700" y="330" width="260" height="104" rx="10" class="box"/>
   <text x="722" y="362" class="title">Local ACP agent</text>

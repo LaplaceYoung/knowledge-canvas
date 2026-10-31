@@ -1,4 +1,4 @@
-import { FileUp, Globe2, Hand, Maximize2, MessageSquarePlus, MousePointer2 } from 'lucide-react'
+import { FileUp, Hand, Maximize2, MessageSquarePlus, MousePointer2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -7,7 +7,7 @@ interface ToolRailProps {
   panMode: boolean
   onPanModeChange: (enabled: boolean) => void
   onNewChat: () => void
-  onNewWeb: () => void
+  onCreate: () => void
   onImport: () => void
   onFit: () => void
   hasNodes: boolean
@@ -17,7 +17,7 @@ export function ToolRail({
   panMode,
   onPanModeChange,
   onNewChat,
-  onNewWeb,
+  onCreate,
   onImport,
   onFit,
   hasNodes,
@@ -69,11 +69,11 @@ export function ToolRail({
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon-sm" onClick={onNewWeb} aria-label="新建 Web 节点">
-            <Globe2 />
+          <Button variant="ghost" size="icon-sm" onClick={onCreate} aria-label="新增节点">
+            <Plus />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="right">新建 Web 节点 (W)</TooltipContent>
+        <TooltipContent side="right">新增节点（双击空白）</TooltipContent>
       </Tooltip>
       <Separator className="my-0.5 w-6" />
       <Tooltip>
