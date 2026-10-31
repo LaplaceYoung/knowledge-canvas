@@ -1,5 +1,6 @@
 import { ApiSettingsDialog } from '@/components/ApiSettingsDialog'
 import { CanvasSidebar } from '@/components/CanvasSidebar'
+import { GlobalSearch } from '@/components/GlobalSearch'
 import { CanvasWorkspace } from '@/components/CanvasWorkspace'
 import { FocusView } from '@/components/FocusView'
 import { listenWebBridgeEvents } from '@/lib/web-bridge'
@@ -33,6 +34,7 @@ export default function Home() {
         <CanvasWorkspace key={activeCanvasId} />
       </div>
       <FocusView />
+      <GlobalSearch />
       <ApiSettingsDialog />
     </div>
   )
