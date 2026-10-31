@@ -1,4 +1,4 @@
-const EXTENSION_VERSION = '0.3.0'
+const EXTENSION_VERSION = '0.3.1'
 const BINDINGS_KEY = 'knowledge_canvas_web_bindings_v1'
 const ALLOWED_CANVAS_ORIGINS = new Set([
   'http://localhost:3000',
@@ -161,6 +161,7 @@ function normalizeMessages(messages) {
       id: message.id,
       role: message.role,
       content: message.content.slice(0, 40_000),
+      format: message.format === 'markdown' ? 'markdown' : undefined,
       createdAt: Number.isFinite(message.createdAt) ? message.createdAt : Date.now(),
     }))
 }

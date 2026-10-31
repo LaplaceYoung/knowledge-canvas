@@ -535,6 +535,83 @@ body {
   margin-bottom: 0;
 }
 
+.web-user-markdown,
+.web-user-markdown > :first-child,
+.web-user-markdown > :last-child {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.web-user-markdown p {
+  margin: 0;
+}
+
+.web-user-markdown pre,
+.web-user-markdown table {
+  max-width: 100%;
+}
+
+.web-streaming-message > :last-child {
+  margin-bottom: 0;
+}
+
+.web-stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 3px;
+  vertical-align: -0.12em;
+  border-radius: 999px;
+  background: var(--ring);
+  animation: web-caret 1s steps(2, jump-none) infinite;
+}
+
+.web-typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.web-typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--muted-foreground);
+  animation: web-dot 1.2s ease-in-out infinite;
+}
+
+.web-typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.web-typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes web-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  46%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes web-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
 .web-composer {
   background: var(--card);
 }
@@ -678,5 +755,14 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .web-stream-caret,
+  .web-typing-dots span {
+    animation: none;
+    opacity: 1;
   }
 }

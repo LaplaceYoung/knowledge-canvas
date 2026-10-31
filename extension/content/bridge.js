@@ -1,7 +1,7 @@
-const ADAPTER_VERSION = 'web-dom-0.3.0'
+const ADAPTER_VERSION = 'web-dom-0.3.1'
 const ACTIVE_RUNS = new Map()
 const OPTION_CACHE = new Map()
-const POLL_MS = 700
+const POLL_MS = 350
 const STABLE_TICKS = 3
 const RUN_TIMEOUT_MS = 5 * 60 * 1000
 
@@ -105,6 +105,197 @@ function getSendButton() {
   return named[named.length - 1] || null
 }
 
+const SKIP_MARKDOWN_SELECTOR =
+  'button, [role="button"], svg, style, script, noscript, textarea, input, select, canvas, video, audio, iframe, .sr-only, [aria-hidden="true"], [data-markdown-copy="exclude"], [data-testid*="copy"], [data-testid*="feedback"], [data-testid*="action"]'
+
+function inlineMarkdownText(value) {
+  return (value || '').replace(/\s+/g, ' ').trim()
+}
+
+function safeMarkdownUrl(value) {
+  try {
+    const url = new URL(value, location.href)
+    return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? url.href : ''
+  } catch {
+    return ''
+  }
+}
+
+function escapeTableCell(value) {
+  return value.replace(/\|/g, '\\|').replace(/\n+/g, ' ').trim()
+}
+
+function serializeTable(table) {
+  const rows = [...table.querySelectorAll('tr')]
+    .map((row) => [...row.querySelectorAll(':scope > th, :scope > td')])
+    .filter((cells) => cells.length > 0)
+  if (!rows.length) return ''
+  const matrix = rows.map((cells) =>
+    cells.map((cell) => escapeTableCell(inlineMarkdownText(serializeChildren(cell)))),
+  )
+  const width = Math.max(...matrix.map((row) => row.length))
+  const pad = (row) => [...row, ...Array(Math.max(0, width - row.length)).fill('')]
+  const header = pad(matrix[0])
+  const lines = [
+    `| ${header.join(' | ')} |`,
+    `| ${header.map(() => '---').join(' | ')} |`,
+    ...matrix.slice(1).map((row) => `| ${pad(row).join(' | ')} |`),
+  ]
+  return `\n\n${lines.join('\n')}\n\n`
+}
+
+function serializeList(list) {
+  const ordered = list.tagName === 'OL'
+  const items = [...list.children].filter((child) => child.tagName === 'LI')
+  return (
+    items
+      .map((item, index) => {
+        const nested = []
+        let content = ''
+        for (const child of item.childNodes) {
+          if (child instanceof Element && (child.tagName === 'UL' || child.tagName === 'OL')) {
+            nested.push(child)
+            continue
+          }
+          content += serializeMarkdownNode(child)
+        }
+        const text = inlineMarkdownText(content)
+        const nestedText = nested
+          .map((child) => serializeList(child))
+          .join('')
+          .split('\n')
+          .filter(Boolean)
+          .map((line) => `  ${line}`)
+          .join('\n')
+        return `${ordered ? `${index + 1}. ` : '- '}${text}${nestedText ? `\n${nestedText}` : ''}`
+      })
+      .join('\n') + '\n\n'
+  )
+}
+
+function codeFence(raw, language) {
+  const text = raw.replace(/\n$/, '')
+  if (!text.trim()) return ''
+  return `\n\n\`\`\`${language}\n${text}\n\`\`\`\n\n`
+}
+
+function serializeCodeBlock(node) {
+  const editor = node.querySelector(
+    '.cm-content[data-language], [data-editor-search-surface] .cm-content, pre code, pre',
+  )
+  const language =
+    editor?.getAttribute('data-language') ||
+    node.querySelector('[data-language]')?.getAttribute('data-language') ||
+    (node.innerText || '').slice(0, 100).match(/\b(python|javascript|typescript|bash|shell|json|html|css|sql|java|cpp|c\+\+|go|rust|ruby|php|swift|kotlin|yaml|markdown)\b/i)?.[1] ||
+    ''
+
+  if (!editor) return codeFence(node.innerText || node.textContent || '', language)
+  const lines = [...editor.querySelectorAll('.cm-line')]
+  const raw = lines.length
+    ? lines.map((line) => line.textContent.replace(/\u00a0/g, ' ')).join('\n')
+    : editor.innerText || editor.textContent || ''
+  return codeFence(raw, language)
+}
+
+function serializeMarkdownNode(node) {
+  if (node.nodeType === Node.TEXT_NODE) return inlineMarkdownText(node.nodeValue)
+  if (!(node instanceof Element)) return ''
+  if (node.matches('.katex')) {
+    const annotation = node.querySelector('annotation[encoding="application/x-tex"]')
+    const tex = annotation?.textContent?.trim()
+    if (tex) return node.closest('.katex-display') ? `\n\n$$\n${tex}\n$$\n\n` : `$${tex}$`
+  }
+  if (node.matches('[data-code-block="true"]')) return serializeCodeBlock(node)
+  if (node.matches(SKIP_MARKDOWN_SELECTOR)) return ''
+  const tag = node.tagName.toLowerCase()
+
+  if (/^h[1-6]$/.test(tag)) {
+    return `${'#'.repeat(Number(tag[1]))} ${inlineMarkdownText(serializeChildren(node))}\n\n`
+  }
+
+  switch (tag) {
+    case 'br':
+      return '\n'
+    case 'hr':
+      return '\n\n---\n\n'
+    case 'p':
+      return `${serializeChildren(node)}\n\n`
+    case 'strong':
+    case 'b': {
+      const text = inlineMarkdownText(serializeChildren(node))
+      return text ? `**${text}**` : ''
+    }
+    case 'em':
+    case 'i': {
+      const text = inlineMarkdownText(serializeChildren(node))
+      return text ? `*${text}*` : ''
+    }
+    case 'del':
+    case 's': {
+      const text = inlineMarkdownText(serializeChildren(node))
+      return text ? `~~${text}~~` : ''
+    }
+    case 'code': {
+      if (node.closest('pre')) return node.textContent || ''
+      const text = (node.textContent || '').trim()
+      if (!text) return ''
+      const ticks = text.includes('`') ? '``' : '`'
+      return `${ticks}${text}${ticks}`
+    }
+    case 'pre': {
+      const code = node.querySelector('code')
+      const raw = (code?.textContent ?? node.textContent ?? '').replace(/\n$/, '')
+      if (!raw.trim()) return ''
+      const language = (
+        (code?.className || '').match(/language-([\w-]+)/)?.[1] ||
+        node.getAttribute('data-language') ||
+        ''
+      ).trim()
+      return `\n\n\`\`\`${language}\n${raw}\n\`\`\`\n\n`
+    }
+    case 'blockquote': {
+      const text = serializeChildren(node).trim()
+      return text
+        ? `\n\n${text
+            .split('\n')
+            .map((line) => `> ${line}`)
+            .join('\n')}\n\n`
+        : ''
+    }
+    case 'ul':
+    case 'ol':
+      return serializeList(node)
+    case 'table':
+      return serializeTable(node)
+    case 'a': {
+      const text = inlineMarkdownText(serializeChildren(node))
+      const href = safeMarkdownUrl(node.getAttribute('href') || '')
+      return href && text ? `[${text}](${href})` : text
+    }
+    case 'img': {
+      const alt = node.getAttribute('alt') || ''
+      const src = safeMarkdownUrl(node.getAttribute('src') || '')
+      return src ? `![${alt}](${src})` : alt ? `[图片：${alt}]` : ''
+    }
+    case 'li':
+      return `${serializeChildren(node)}\n`
+    default:
+      return serializeChildren(node)
+  }
+}
+
+function serializeChildren(node) {
+  return [...node.childNodes].map(serializeMarkdownNode).join('')
+}
+
+function elementToMarkdown(root) {
+  if (!root) return ''
+  return serializeChildren(root)
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function getMessages() {
   const spec = PROVIDER_SPECS[PROVIDER_ID]
   if (!spec?.messages?.length) return []
@@ -118,7 +309,7 @@ function getMessages() {
       const contentElement = config.contentSelector
         ? findFirst(config.contentSelector.split(','), element)
         : element
-      const content = textOf(contentElement)
+      const content = elementToMarkdown(contentElement) || textOf(contentElement)
       if (!content) continue
       const role = config.role || element.getAttribute(config.roleAttr || 'data-role')
       if (role !== 'user' && role !== 'assistant') continue
@@ -130,6 +321,7 @@ function getMessages() {
           id: explicitId || `${PROVIDER_ID}-${role}-${index}`,
           role,
           content,
+          format: 'markdown',
           createdAt: Date.now(),
         },
       })
@@ -284,6 +476,7 @@ function startRun(nodeId, requestId, baselineCount, prompt) {
             id: `${PROVIDER_ID}-fallback-${run.requestId}`,
             role: 'assistant',
             content: fallback,
+            format: 'text',
             createdAt: Date.now(),
           },
         ]
@@ -707,7 +900,12 @@ const PROVIDER_SPECS = {
         roleAttr: 'data-message-author-role',
         idAttr: 'data-message-id',
       },
-      { selector: '[class*="user-message"]', role: 'user' },
+      {
+        selector: '[class*="user-message"]',
+        role: 'user',
+        contentSelector:
+          '[data-user-message-bubble="true"], [class*="text-size-chat"], .whitespace-pre-wrap',
+      },
       { selector: '[class*="MarkdownRoot"]', role: 'assistant' },
     ],
     controls: chatGptControls,

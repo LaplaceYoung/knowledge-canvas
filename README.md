@@ -173,7 +173,7 @@ A Web node is **not an iframe**. It is a canvas node bound to a real provider ta
 
 Supported providers: **ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi**.
 
-- **In-node prompting**: every bound provider submits through its normal webpage composer and mirrors the visible messages that appear after the prompt. This uses the webpage account and quota, not the BYOK key.
+- **In-node prompting**: every bound provider submits through its normal webpage composer and mirrors the visible messages that appear after the prompt. Messages are converted to Markdown so tables, code blocks, lists, and links keep their structure. This uses the webpage account and quota, not the BYOK key.
 - **Provider controls**: the node discovers the model, thinking, and search controls that the page actually renders. DeepSeek exposes thinking and smart-search toggles; ChatGPT exposes thinking; Claude, Grok, Kimi, Gemini, and Doubao expose their current model menus when present.
 - **Fallback**: without the extension, or when a provider page changes, the node remains a real-page shortcut. Lost bindings and unknown submit states are shown explicitly, never treated as success.
 

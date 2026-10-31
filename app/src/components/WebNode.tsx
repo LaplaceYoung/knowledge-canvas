@@ -64,6 +64,12 @@ export function WebBody({ node }: WebBodyProps) {
   const canBind = data.bindingState !== 'bound' && data.bindingState !== 'opening'
   const hasMessages = data.visibleMessages.length > 0
   const controls = data.controls ?? []
+  const lastMessage = data.visibleMessages.at(-1)
+  const streamingMessageId =
+    data.mirrorState === 'answering' && lastMessage?.role === 'assistant'
+      ? lastMessage.id
+      : null
+  const waitingForFirstMessage = pending && !streamingMessageId
 
   const setDraft = (value: string) => {
     setText(value)
@@ -289,28 +295,42 @@ export function WebBody({ node }: WebBodyProps) {
       <div className="web-scroll nowheel min-h-0 flex-1 overflow-y-auto">
         {hasMessages && (
           <div className="web-messages flex flex-col gap-3 px-3 py-3">
-            {data.visibleMessages.map((message) => (
-              <div
-                key={message.id}
-                className={
-                  message.role === 'user'
-                    ? 'flex justify-end pl-8'
-                    : 'min-w-0 pr-1 text-[length:var(--content-font-size)] leading-7 text-foreground'
-                }
-                data-role={`web-${message.role}`}
-              >
-                {message.role === 'user' ? (
-                  <div className="max-w-[88%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-[length:var(--content-font-size)] leading-6 text-secondary-foreground">
-                    {message.content}
-                  </div>
-                ) : (
-                  <Markdown>{message.content}</Markdown>
-                )}
-              </div>
-            ))}
-            {pending && (
+            {data.visibleMessages.map((message) => {
+              const streaming = message.id === streamingMessageId
+              return (
+                <div
+                  key={message.id}
+                  className={
+                    message.role === 'user'
+                      ? 'flex justify-end pl-8'
+                      : 'min-w-0 pr-1 text-[length:var(--content-font-size)] leading-7 text-foreground'
+                  }
+                  data-role={`web-${message.role}`}
+                >
+                  {message.role === 'user' ? (
+                    <div className="web-user-bubble max-w-[88%] break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-[length:var(--content-font-size)] leading-6 text-secondary-foreground">
+                      {message.format === 'markdown' ? (
+                        <Markdown className="web-user-markdown">{message.content}</Markdown>
+                      ) : (
+                        <span className="whitespace-pre-wrap">{message.content}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={streaming ? 'web-streaming-message' : undefined}>
+                      <Markdown>{message.content}</Markdown>
+                      {streaming && <span className="web-stream-caret" aria-hidden="true" />}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {waitingForFirstMessage && (
               <div className="flex items-center gap-2 py-1 text-xs text-muted-foreground">
-                <LoaderCircle className="size-3.5 animate-spin" />
+                <span className="web-typing-dots" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </span>
                 {data.mirrorState === 'submitting' ? '提交中' : '等待回答'}
               </div>
             )}

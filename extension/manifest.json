@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Knowledge Canvas Bridge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Connects Knowledge Canvas Web nodes to real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, and Kimi tabs for in-canvas prompting and controls without reading cookies.",
   "minimum_chrome_version": "116",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1E+27nI8cq2STUuuBLasAuki+RzU8zYseN/xYS4arSsmZPp7UiROZkTQKjJlqO1v3P4fwQaOrHsCPkSdc2p4b2jWFanhfna9XtfKOgwnwvrGjtI6/X+GnC0mGQq9OoIUTvSzyH0XSAKyhfz8zlr0UIJmsV5rkOA40xdeDEqHVrvgZICmkoWdD97rFk0hMsqctXRXnEY9nxvdpIAvjjD4UgXRliLXrW9e0IohdtfQlm80kSkUAdQpZ0fx6gFUUDtavoRg7qzycIonERGbmo/kNB4sjhnqPDslpmnYfbZrJqPXqrj269kFY6XIoYtwWYUhS2GXBNRk5M5CNRoQTt7/CwIDAQAB",

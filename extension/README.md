@@ -52,6 +52,7 @@ Menus are read from the live page and are not hardcoded model lists. A control i
 The adapter is DOM-based, not an API integration:
 
 - it fills the page composer, clicks the page's own send button, or sends Enter;
+- it converts visible message DOM into Markdown so tables, code blocks, lists, quotes, links, and formulas survive the mirror;
 - it polls only messages that appear after the prompt;
 - it stops at a stable assistant message or reports an unknown state after a timeout;
 - if a page has no readable message container, it falls back to the visible text after the submitted prompt;

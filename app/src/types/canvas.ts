@@ -91,6 +91,7 @@ export interface WebMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
+  format?: 'text' | 'markdown'
   createdAt: number
 }
 
