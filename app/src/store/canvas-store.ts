@@ -96,6 +96,7 @@ interface CanvasState {
   updateOcrPage: (id: string, page: number, update: Partial<Omit<OcrPage, 'number'>>) => void
   finishOcrRun: (id: string, error?: string) => void
   createBranch: (parentId: string, source: Omit<SourceAnchor, 'parentNodeId' | 'parentTitle'>) => string | null
+  createFork: (parentId: string) => string | null
   removeNode: (id: string) => void
   setChatError: (id: string, error: string) => void
   rewindToLastUser: (id: string) => string | null
@@ -662,6 +663,26 @@ export const useCanvasStore = create<CanvasState>()(
         }))
       },
 
+      createFork: (parentId) => {
+        const state = get()
+        const parent = state.nodes.find((node) => node.id === parentId)
+        if (!parent) return null
+        const position = findBranchPosition(state.nodes, parent)
+        const node = makeChatNode(
+          position,
+          `分支：${parent.data.title.slice(0, 24)}`,
+          parentId,
+        )
+        set({
+          nodes: [...state.nodes.map((entry) => ({ ...entry, selected: false })), { ...node, selected: true }],
+          selectedNodeId: node.id,
+          focusedNodeId: null,
+          pendingInputNodeId: node.id,
+          revealNodeId: node.id,
+        })
+        return node.id
+      },
+
       createBranch: (parentId, source) => {
         const state = get()
         const parent = state.nodes.find((node) => node.id === parentId)
@@ -791,7 +812,9 @@ export const useCanvasStore = create<CanvasState>()(
             updateChatData(node, (data) => ({
               ...data,
               title:
-                data.title === '新对话' || data.title.startsWith('追问：')
+                data.title === '新对话' ||
+                data.title.startsWith('追问：') ||
+                data.title.startsWith('分支：')
                   ? userText.trim().slice(0, 34) || data.title
                   : data.title,
               messages: [...data.messages, userMessage, assistantMessage],

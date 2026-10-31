@@ -46,6 +46,7 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
 | **Settings** | One panel for LLM keys, search keys (TinyFish, Exa, DeepSeek, Bocha), PaddleOCR, ACP agent, and reading size. |
 | **Branching chat** | assistant-ui thread with streaming, stop, retry, copy, regenerate, Markdown, GFM, LaTeX, and code copy. |
 | **Source-anchored branches** | Every follow-up keeps its quoted passage, parent message or page, and a return path to the source. |
+| **Downstream forks** | Any chat, document, or Web node can create a child chat node; the child inherits the upstream conversation, document text, or visible Web messages. |
 | **Documents** | Read-only PDF, Markdown, and TXT nodes with text selection and local persistence. |
 | **PaddleOCR** | Keep scanned PDFs, render pages locally, call PaddleOCR cloud or self-hosted PaddleX, and anchor recognized text to page numbers. |
 | **Web nodes** | Bind real ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Qwen, or Kimi tabs through a browser extension. Prompt and read visible messages inside the node, with provider-specific model, thinking, and search controls. |

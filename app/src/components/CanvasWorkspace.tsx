@@ -280,19 +280,19 @@ export function CanvasWorkspace() {
       const top = Math.min(parent.position.y, node.position.y)
       const bottom = Math.max(parent.position.y + parentSize.height, node.position.y + size.height)
       const pairFit = Math.min(availableWidth / (right - left), availableHeight / (bottom - top), 0.9)
-      if (pairFit >= 0.55) {
+      if (pairFit >= 0.65) {
         setCenter((left + right) / 2, (top + bottom) / 2, { zoom: pairFit, duration: 260 })
       } else {
         const childFit = Math.min(availableWidth / size.width, availableHeight / size.height, 1)
         setCenter(node.position.x + size.width / 2, node.position.y + size.height / 2, {
-          zoom: Math.max(0.65, childFit),
+          zoom: Math.max(0.7, childFit),
           duration: 260,
         })
       }
     } else {
       const fitZoom = Math.min(availableWidth / size.width, availableHeight / size.height, 1)
       setCenter(node.position.x + size.width / 2, node.position.y + size.height / 2, {
-        zoom: Math.max(0.6, fitZoom),
+        zoom: Math.max(0.65, fitZoom),
         duration: 260,
       })
     }

@@ -1,5 +1,5 @@
 import type { ApiMessage } from '@/lib/api'
-import type { CanvasNode, ChatMessage, ChatNodeData, DocumentNodeData } from '@/types/canvas'
+import type { CanvasNode, ChatMessage, ChatNodeData, DocumentNodeData, WebMessage } from '@/types/canvas'
 
 const MAX_DOC_CHARS = 48_000
 const MAX_ANCESTOR_CHARS = 72_000
@@ -29,6 +29,13 @@ function getAncestorChain(nodeId: string, nodes: CanvasNode[]): CanvasNode[] {
 }
 
 function formatChatMessages(messages: ChatMessage[]): string {
+  return messages
+    .filter((message) => message.content.trim())
+    .map((message) => `${message.role === 'user' ? 'User' : 'Assistant'}: ${message.content.trim()}`)
+    .join('\n\n')
+}
+
+function formatWebMessages(messages: WebMessage[]): string {
   return messages
     .filter((message) => message.content.trim())
     .map((message) => `${message.role === 'user' ? 'User' : 'Assistant'}: ${message.content.trim()}`)
@@ -134,6 +141,25 @@ ${escapeContext(source.quote)}
       if (documentSection.truncated) {
         notes.push(`文档「${ancestor.data.fileName}」过长，本轮只提交前 ${MAX_DOC_CHARS.toLocaleString()} 字符。`)
       }
+    } else if (ancestor.data.kind === 'web') {
+      const formatted = formatWebMessages(ancestor.data.visibleMessages)
+      const fallback = `URL: ${ancestor.data.conversationUrl || '未知'}`
+      const body = formatted || fallback
+      const remaining = Math.max(0, MAX_ANCESTOR_CHARS - ancestorChars)
+      if (!remaining) {
+        notes.push('较早的上游 Web 节点因长度限制未纳入。')
+        continue
+      }
+      const clipped = body.slice(-remaining)
+      if (clipped.length < body.length) {
+        notes.push(`上游 Web 节点「${ancestor.data.title}」过长，已保留最近部分。`)
+      }
+      ancestorChars += clipped.length
+      sections.push(
+        `<ancestor_web provider="${escapeContext(ancestor.data.providerId)}" title="${escapeContext(ancestor.data.title)}" url="${escapeContext(ancestor.data.conversationUrl || '')}">
+${escapeContext(clipped)}
+</ancestor_web>`,
+      )
     }
   }
 

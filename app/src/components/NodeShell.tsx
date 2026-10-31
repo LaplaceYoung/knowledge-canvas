@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
-import { FileText, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
+import { FileText, GitBranch, Maximize2, MessageSquare, Trash2, X } from 'lucide-react'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode } from '@/types/canvas'
 import { formatSourcePage } from '@/lib/context'
@@ -25,6 +25,7 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
   const setNodeTitle = useCanvasStore((state) => state.setNodeTitle)
   const setFocusedNodeId = useCanvasStore((state) => state.setFocusedNodeId)
   const removeNode = useCanvasStore((state) => state.removeNode)
+  const createFork = useCanvasStore((state) => state.createFork)
   const requestSourceJump = useCanvasStore((state) => state.requestSourceJump)
   const { setCenter } = useReactFlow()
   const childCount = useCanvasStore(
@@ -115,6 +116,15 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
             (selected || mode === 'focus') && 'opacity-100',
           )}
         >
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="引出下游节点"
+            aria-label="引出下游节点"
+            onClick={() => createFork(node.id)}
+          >
+            <GitBranch />
+          </Button>
           {mode === 'canvas' ? (
             <>
               <Button

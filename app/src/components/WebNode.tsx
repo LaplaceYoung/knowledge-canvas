@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { NodeResizer, type NodeProps } from '@xyflow/react'
 import {
   ArrowUp,
@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import { Markdown } from '@/components/Markdown'
 import { NodeShell } from '@/components/NodeShell'
+import { SelectionPopover } from '@/components/SelectionPopover'
 import { Button } from '@/components/ui/button'
 import {
   bindCurrentWebNode,
@@ -21,6 +22,11 @@ import {
   unbindWebNode,
 } from '@/lib/web-node-service'
 import { webUrlLabel } from '@/lib/web-providers'
+import {
+  highlightQuote,
+  useSelectionTool,
+  type SelectionPayload,
+} from '@/hooks/use-selection-tool'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasNode, WebControl, WebNodeData } from '@/types/canvas'
 import { NODE_SIZES } from '@/types/canvas'
@@ -52,7 +58,10 @@ interface WebBodyProps {
 
 export function WebBody({ node }: WebBodyProps) {
   const data = node.data
+  const rootRef = useRef<HTMLDivElement>(null)
   const updateWebNodeData = useCanvasStore((state) => state.updateWebNodeData)
+  const createBranch = useCanvasStore((state) => state.createBranch)
+  const sourceJump = useCanvasStore((state) => state.sourceJump)
   const [text, setText] = useState(data.draft ?? '')
   const [activating, setActivating] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -70,6 +79,32 @@ export function WebBody({ node }: WebBodyProps) {
       ? lastMessage.id
       : null
   const waitingForFirstMessage = pending && !streamingMessageId
+
+  const getSource = useCallback((range: Range): SelectionPayload | null => {
+    const common = range.commonAncestorContainer
+    const element = common.nodeType === Node.ELEMENT_NODE ? (common as Element) : common.parentElement
+    const message = element?.closest<HTMLElement>('[data-role^="web-"][data-message-id]')
+    if (!message?.dataset.messageId) return null
+    return { quote: range.toString().trim(), messageId: message.dataset.messageId }
+  }, [])
+
+  const { pending: selectionPending, handleMouseUp, close } = useSelectionTool({
+    containerRef: rootRef,
+    getSource,
+  })
+
+  useEffect(() => {
+    if (sourceJump?.nodeId !== node.id || !sourceJump.messageId) return
+    const message = rootRef.current?.querySelector<HTMLElement>(
+      `[data-message-id="${CSS.escape(sourceJump.messageId)}"]`,
+    )
+    if (!message) return
+    message.scrollIntoView({ block: 'center' })
+    message.classList.add('is-source-target')
+    if (sourceJump.quote) highlightQuote(message, sourceJump.quote)
+    const timer = window.setTimeout(() => message.classList.remove('is-source-target'), 2200)
+    return () => window.clearTimeout(timer)
+  }, [node.id, sourceJump?.messageId, sourceJump?.nonce, sourceJump?.nodeId, sourceJump?.quote])
 
   const setDraft = (value: string) => {
     setText(value)
@@ -131,7 +166,7 @@ export function WebBody({ node }: WebBodyProps) {
     data.mirrorState === 'unknown'
 
   return (
-    <div className="web-body flex min-h-0 flex-1 flex-col">
+    <div ref={rootRef} onMouseUp={handleMouseUp} className="web-body flex min-h-0 flex-1 flex-col">
       <div className="web-toolbar flex h-9 flex-none items-center gap-2 border-b px-2">
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           {data.bindingState === 'opening' && <LoaderCircle className="size-3 animate-spin" />}
@@ -306,6 +341,7 @@ export function WebBody({ node }: WebBodyProps) {
                       : 'min-w-0 pr-1 text-[length:var(--content-font-size)] leading-7 text-foreground'
                   }
                   data-role={`web-${message.role}`}
+                  data-message-id={message.id}
                 >
                   {message.role === 'user' ? (
                     <div className="web-user-bubble max-w-[88%] break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-[length:var(--content-font-size)] leading-6 text-secondary-foreground">
@@ -365,6 +401,18 @@ export function WebBody({ node }: WebBodyProps) {
           </Button>
         </div>
       )}
+
+      <SelectionPopover
+        selection={selectionPending}
+        onClose={close}
+        onAsk={(selection) => {
+          createBranch(node.id, {
+            quote: selection.quote,
+            parentMessageId: selection.messageId,
+          })
+          close()
+        }}
+      />
     </div>
   )
 }

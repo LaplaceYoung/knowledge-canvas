@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Clipboard, CornerDownRight } from 'lucide-react'
 import type { SelectionPayload } from '@/hooks/use-selection-tool'
@@ -12,6 +13,20 @@ interface SelectionPopoverProps {
 }
 
 export function SelectionPopover({ selection, onAsk, onClose }: SelectionPopoverProps) {
+  useEffect(() => {
+    if (!selection) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        onAsk(selection)
+      } else if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onAsk, onClose, selection])
+
   if (!selection) return null
 
   const copy = async () => {
@@ -29,7 +44,7 @@ export function SelectionPopover({ selection, onAsk, onClose }: SelectionPopover
     >
       <Button type="button" variant="ghost" size="sm" className="h-7 gap-1.5 px-2" onClick={() => onAsk(selection)}>
         <CornerDownRight className="size-3.5" />
-        追问
+        新节点提问
         <Kbd className="ml-1">↵</Kbd>
       </Button>
       <Button type="button" variant="ghost" size="icon-sm" onClick={copy} title="复制选段" aria-label="复制选段">

@@ -100,7 +100,7 @@ export function highlightQuote(container: HTMLElement | null, quote: string) {
   selection?.removeAllRanges()
   selection?.addRange(range)
   const rect = range.getBoundingClientRect()
-  const scroller = container.closest<HTMLElement>('.chat-viewport, .document-scroll, .node-scroll')
+  const scroller = container.closest<HTMLElement>('.chat-viewport, .document-scroll, .web-scroll, .node-scroll')
   if (scroller) {
     scroller.scrollTop += rect.top - scroller.getBoundingClientRect().top - 80
   }

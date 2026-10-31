@@ -233,11 +233,11 @@ function NodeThread({ node }: { node: CanvasNode & { data: ChatNodeData } }) {
           return
         }
       }
-      if (attempts < 12) {
+      if (attempts < 40) {
         attempts += 1
-        timer = window.setTimeout(focusComposer, 40)
+        timer = window.setTimeout(focusComposer, 50)
       }
-    }, 90)
+    }, 120)
     return () => {
       cancelled = true
       window.clearTimeout(timer)

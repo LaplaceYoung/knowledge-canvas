@@ -45,6 +45,7 @@ Knowledge Canvas 把这些关系放进空间里：
 | **设置面板** | 集中配置 LLM Key、搜索 Key（TinyFish、Exa、DeepSeek、博查）、PaddleOCR、ACP Agent 与阅读字号。 |
 | **分支对话** | assistant-ui 线程、流式输出、停止、重试、复制、重新生成、Markdown、GFM、LaTeX 和代码复制。 |
 | **来源锚点** | 每个追问保留引用文本、父消息或页码，可回到原文并恢复高亮。 |
+| **下游 Fork** | 任意对话、文档或 Web 节点都能引出子对话节点，子节点继承上游对话、文档正文或 Web 可见消息。 |
 | **文档阅读** | PDF、Markdown、TXT 只读节点，支持文本选择与本地保存。 |
 | **PaddleOCR** | 保留扫描 PDF，在浏览器逐页渲染，通过云端或自建 PaddleX 识别，并按页保存。 |
 | **Web 节点** | 通过浏览器扩展绑定真实 ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Qwen、Kimi 标签页；节点内提问、读取可见消息，并按网页能力调整模型、思考与联网控制。 |
