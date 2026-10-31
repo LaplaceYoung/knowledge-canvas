@@ -1,0 +1,638 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--ring) 25%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--border);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-shell {
+  width: 100%;
+  height: 100%;
+  background: var(--background);
+}
+
+.canvas-workspace {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--background);
+}
+
+.canvas-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.react-flow {
+  width: 100%;
+  height: 100%;
+  background: var(--background);
+  font-family: inherit;
+}
+
+.react-flow__attribution {
+  padding: 2px 4px;
+  background: color-mix(in oklab, var(--background) 82%, transparent);
+  color: var(--muted-foreground);
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+.react-flow__node {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.react-flow__node:focus,
+.react-flow__node:focus-visible {
+  outline: 0;
+}
+
+.react-flow__node.selected {
+  z-index: 4 !important;
+}
+
+.react-flow__panel {
+  z-index: 20;
+}
+
+.canvas-handle {
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.react-flow__edge-path {
+  transition: stroke 120ms ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--ring) !important;
+}
+
+.react-flow__selection {
+  border: 1px solid color-mix(in oklab, var(--ring) 70%, transparent);
+  background: color-mix(in oklab, var(--ring) 7%, transparent);
+}
+
+.react-flow__minimap {
+  background: transparent;
+}
+
+.is-pan-mode .react-flow__pane {
+  cursor: grab;
+}
+
+.canvas-node {
+  min-width: 0;
+}
+
+.chat-viewport,
+.chat-viewport *,
+.document-scroll,
+.document-scroll * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.node-drag-handle {
+  user-select: none;
+}
+
+.node-thread {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-thread-root {
+  height: 100%;
+}
+
+.chat-viewport {
+  scroll-behavior: auto;
+}
+
+.chat-composer-footer {
+  background: var(--card);
+}
+
+.chat-composer-footer button[aria-label="回到底部"]:disabled {
+  display: none;
+}
+
+.chat-viewport [data-role="assistant"] {
+  scroll-margin: 32px;
+}
+
+.chat-viewport [data-role="assistant"] p {
+  margin-bottom: 0.7em;
+}
+
+.chat-viewport [data-role="assistant"] > :last-child {
+  margin-bottom: 0;
+}
+
+.aui-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0.9em 0 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: color-mix(in oklab, var(--muted) 68%, transparent);
+}
+
+.aui-code-pre {
+  margin: 0 0 0.9em !important;
+  padding: 10px 12px !important;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-top: 0 !important;
+  border-radius: 0 0 var(--radius) var(--radius) !important;
+  background: color-mix(in oklab, var(--muted) 52%, transparent) !important;
+}
+
+.aui-code-pre code {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: max(11px, calc(var(--content-font-size, 14px) - 1px));
+  line-height: 1.7;
+}
+
+.katex-display {
+  margin: 0.8em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+.katex {
+  font-size: 1.02em;
+}
+
+[data-role="assistant"].is-source-target {
+  border-radius: calc(var(--radius) - 2px);
+  background: color-mix(in oklab, var(--ring) 9%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--ring) 32%, transparent);
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.node-resize-line {
+  z-index: 12 !important;
+  border-color: var(--ring) !important;
+}
+
+.node-resize-handle {
+  z-index: 13 !important;
+  width: 8px !important;
+  height: 8px !important;
+  border: 2px solid var(--card) !important;
+  border-radius: 2px !important;
+  background: var(--ring) !important;
+}
+
+.node-map-pill,
+.node-overview-summary {
+  display: none;
+}
+
+.zoom-overview .node-thread,
+.zoom-overview .document-body,
+.zoom-overview .node-drag-handle .node-actions,
+.zoom-overview .node-resize-line,
+.zoom-overview .node-resize-handle,
+.zoom-overview .chat-composer-footer,
+.zoom-overview .document-toolbar,
+.zoom-overview .document-scroll,
+.zoom-overview .document-footer {
+  display: none;
+}
+
+.zoom-overview .node-overview-summary {
+  display: block;
+  overflow: hidden;
+}
+
+.zoom-overview .node-drag-handle {
+  border-bottom: 0;
+}
+
+.zoom-map .node-drag-handle,
+.zoom-map .node-overview-summary,
+.zoom-map .node-thread,
+.zoom-map .document-body,
+.zoom-map .node-resize-line,
+.zoom-map .node-resize-handle {
+  display: none;
+}
+
+.zoom-map .canvas-node {
+  overflow: visible;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.zoom-map .node-map-pill {
+  display: flex;
+  transform: translate(-50%, -50%) scale(var(--canvas-inverse-zoom)) !important;
+  transform-origin: center;
+}
+
+.zoom-map .react-flow__edge-path {
+  stroke-opacity: 0.4;
+}
+
+.zoom-map .react-flow__edge.selected .react-flow__edge-path {
+  stroke-opacity: 0.9;
+}
+
+.is-focus {
+  height: 100%;
+}
+
+.is-focus .chat-thread-root {
+  max-width: 56rem;
+}
+
+.is-focus .chat-viewport {
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.is-focus .chat-composer-footer {
+  background: var(--card);
+}
+
+.zoom-overview .document-body,
+.zoom-map .document-body {
+  visibility: hidden;
+}
+
+.markdown,
+.aui-md {
+  color: var(--foreground);
+  font-size: var(--content-font-size, 14px);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.aui-md {
+  font-size: inherit;
+}
+
+.chat-viewport .aui-md {
+  font-size: var(--content-font-size, 14px);
+  line-height: 1.7;
+}
+
+.markdown > :first-child,
+.aui-md > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child,
+.aui-md > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown p,
+.aui-md p {
+  margin: 0 0 0.72em;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.aui-md h1,
+.aui-md h2,
+.aui-md h3,
+.aui-md h4 {
+  margin: 1.2em 0 0.45em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
+}
+
+.markdown h1,
+.aui-md h1 {
+  font-size: 1.25em;
+}
+
+.markdown h2,
+.aui-md h2 {
+  font-size: 1.12em;
+}
+
+.markdown h3,
+.markdown h4,
+.aui-md h3,
+.aui-md h4 {
+  font-size: 1em;
+}
+
+.markdown ul,
+.markdown ol,
+.aui-md ul,
+.aui-md ol {
+  margin: 0.5em 0 0.8em;
+  padding-left: 1.35em;
+}
+
+.markdown li,
+.aui-md li {
+  margin: 0.22em 0;
+}
+
+.markdown a,
+.aui-md a {
+  color: var(--ring);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.markdown blockquote,
+.aui-md blockquote {
+  margin: 0.8em 0;
+  padding: 0.1em 0 0.1em 0.8em;
+  border-left: 2px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.markdown code,
+.aui-md code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--muted);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.88em;
+  font-variant-ligatures: none;
+}
+
+.markdown pre,
+.aui-md pre {
+  margin: 0.8em 0;
+  padding: 10px 12px;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--muted) 52%, transparent);
+}
+
+.markdown pre code,
+.aui-md pre code {
+  padding: 0;
+  background: transparent;
+  font-size: max(11px, calc(var(--content-font-size, 14px) - 1px));
+  line-height: 1.65;
+}
+
+.markdown table,
+.aui-md table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  font-size: 0.92em;
+}
+
+.markdown th,
+.markdown td,
+.aui-md th,
+.aui-md td {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown th,
+.aui-md th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.markdown img,
+.aui-md img {
+  max-width: 100%;
+  border-radius: var(--radius);
+}
+
+.markdown hr,
+.aui-md hr {
+  margin: 1.2em 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.pdf-surface {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+}
+
+.pdf-surface > div {
+  width: 100%;
+}
+
+.pdf-surface .react-pdf__Document,
+.pdf-surface .react-pdf__Page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pdf-surface .react-pdf__Page {
+  position: relative;
+  border: 1px solid var(--border);
+  background: white;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.pdf-surface .react-pdf__Page__canvas {
+  display: block;
+}
+
+.pdf-surface .react-pdf__Page__textContent {
+  user-select: text;
+}
+
+.pdf-page-skeleton {
+  width: 100%;
+  height: 460px;
+  background: var(--muted);
+}
+
+.document-markdown {
+  min-height: 100%;
+  padding: 20px 22px 40px;
+  background: var(--card);
+}
+
+.ocr-status-strip {
+  display: flex;
+  min-height: 32px;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--muted) 40%, transparent);
+  padding: 2px 8px 2px 12px;
+}
+
+.ocr-live-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--ring);
+}
+
+.ocr-empty-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 12px 14px;
+}
+
+.ocr-document {
+  min-height: 100%;
+  padding: 16px 22px 40px;
+  background: var(--card);
+}
+
+.ocr-document-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.ocr-page {
+  padding: 14px 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.ocr-page:last-child {
+  border-bottom: 0;
+}
+
+.ocr-page-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.ocr-page-text {
+  color: var(--foreground);
+  font-size: var(--content-font-size, 14px);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.ocr-page-muted {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.ocr-page-error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--destructive);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.is-focus .ocr-document {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.document-text {
+  min-height: 100%;
+  margin: 0;
+  padding: 20px 22px 40px;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: var(--content-font-size, 14px);
+  line-height: 1.7;
+  font-variant-ligatures: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
