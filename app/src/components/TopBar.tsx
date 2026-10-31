@@ -1,6 +1,7 @@
 import { FileUp, SlidersHorizontal, SquarePen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ExportMenu } from '@/components/ExportMenu'
 import { useCanvasStore } from '@/store/canvas-store'
 
 interface TopBarProps {
@@ -44,6 +45,7 @@ export function TopBar({ onNewChat, onImport }: TopBarProps) {
           </span>
           <SlidersHorizontal className="size-3.5" />
         </Button>
+        <ExportMenu />
         <Button variant="outline" size="sm" onClick={onImport}>
           <FileUp />
           导入
