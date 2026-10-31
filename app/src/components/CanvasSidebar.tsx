@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { LayoutGrid, Pin, Plus, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Button } from '@/components/ui/button'
+import { unbindWebNodes } from '@/lib/web-node-service'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/store/canvas-store'
 import type { CanvasSummary } from '@/types/canvas'
@@ -15,6 +16,8 @@ export function CanvasSidebar() {
   const deleteCanvas = useCanvasStore((state) => state.deleteCanvas)
   const toggleCanvasPin = useCanvasStore((state) => state.toggleCanvasPin)
   const reorderCanvas = useCanvasStore((state) => state.reorderCanvas)
+  const nodes = useCanvasStore((state) => state.nodes)
+  const canvasSnapshots = useCanvasStore((state) => state.canvasSnapshots)
   const [deletingCanvas, setDeletingCanvas] = useState<CanvasSummary | null>(null)
   const [dragCanvasId, setDragCanvasId] = useState<string | null>(null)
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
@@ -31,6 +34,18 @@ export function CanvasSidebar() {
   const canDelete = canvases.length > 1
   const displayTitle = (canvas: CanvasSummary) =>
     (canvas.id === activeCanvasId ? canvasTitle : canvas.title).trim() || '未命名画布'
+
+  const deleteWithBindings = async (canvas: CanvasSummary) => {
+    const targetNodes =
+      canvas.id === activeCanvasId ? nodes : (canvasSnapshots[canvas.id]?.nodes ?? [])
+    await unbindWebNodes(
+      targetNodes
+        .filter((node) => node.data.kind === 'web')
+        .map((node) => node.id),
+    )
+    deleteCanvas(canvas.id)
+    setDeletingCanvas(null)
+  }
 
   const renderCanvas = (canvas: CanvasSummary) => {
     const active = canvas.id === activeCanvasId
@@ -153,8 +168,8 @@ export function CanvasSidebar() {
         description="画布和其中的节点会从本地删除。此操作不能撤销。"
         onClose={() => setDeletingCanvas(null)}
         onConfirm={() => {
-          if (deletingCanvas) deleteCanvas(deletingCanvas.id)
-          setDeletingCanvas(null)
+          if (deletingCanvas) void deleteWithBindings(deletingCanvas)
+          else setDeletingCanvas(null)
         }}
       />
     </aside>

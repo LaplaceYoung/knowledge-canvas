@@ -208,6 +208,18 @@ export async function bindCurrentWebNode(nodeId: string) {
   }
 }
 
+export async function unbindWebNodes(nodeIds: string[]) {
+  await Promise.all(
+    nodeIds.map(async (nodeId) => {
+      try {
+        await sendWebBridgeCommand({ type: 'conversation.unbind', nodeId }, 3_000)
+      } catch {
+        // Deleting local canvas state must still work without the extension.
+      }
+    }),
+  )
+}
+
 export async function unbindWebNode(nodeId: string) {
   try {
     await sendWebBridgeCommand({ type: 'conversation.unbind', nodeId }, 3_000)
