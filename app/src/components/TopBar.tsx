@@ -18,13 +18,11 @@ export function TopBar({ onNewChat, onImport }: TopBarProps) {
 
   return (
     <header className="z-20 flex h-12 shrink-0 items-center gap-2 border-b bg-background px-3">
-      <span className="shrink-0 pr-1 text-sm font-semibold tracking-tight">Knowledge Canvas</span>
-      <span className="h-4 w-px bg-border" aria-hidden="true" />
       <Input
         value={canvasTitle}
         aria-label="画布名称"
         onChange={(event) => setCanvasTitle(event.target.value)}
-        className="h-8 w-48 border-transparent bg-transparent px-2 text-sm font-medium shadow-none hover:border-input focus-visible:border-ring"
+        className="h-8 w-56 border-transparent bg-transparent px-2 text-sm font-medium shadow-none hover:border-input focus-visible:border-ring"
       />
       <span className="hidden text-xs text-muted-foreground sm:inline">
         {nodeCount > 0 ? `${nodeCount} 个节点` : '空白画布'}

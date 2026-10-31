@@ -5,10 +5,13 @@ import { createId } from '@/lib/id'
 import { findBranchPosition, findFreePosition } from '@/lib/layout'
 import { removePdfAsset } from '@/lib/files'
 import { snapshotContextForFrozenBranch } from '@/lib/context'
+import { stopRequest } from '@/lib/request-registry'
 import type {
   ApiConfig,
   CanvasNode,
   CanvasNodeData,
+  CanvasSnapshot,
+  CanvasSummary,
   CanvasViewport,
   ChatMessage,
   ChatNodeData,
@@ -27,8 +30,12 @@ import { DEFAULT_API_CONFIG, DEFAULT_OCR_CONFIG, NODE_SIZES } from '@/types/canv
 import { WEB_PROVIDERS } from '@/lib/web-providers'
 
 const initialViewport: CanvasViewport = { x: 0, y: 0, zoom: 1 }
+const initialCanvasId = createId('canvas')
 
 interface CanvasState {
+  activeCanvasId: string
+  canvases: CanvasSummary[]
+  canvasSnapshots: Record<string, CanvasSnapshot>
   nodes: CanvasNode[]
   viewport: CanvasViewport
   canvasTitle: string
@@ -46,6 +53,8 @@ interface CanvasState {
   setNodes: (nodes: CanvasNode[]) => void
   setViewport: (viewport: CanvasViewport) => void
   setCanvasTitle: (title: string) => void
+  createCanvas: () => string
+  switchCanvas: (id: string) => void
   setSelectedNodeId: (id: string | null) => void
   setFocusedNodeId: (id: string | null) => void
   setRevealNodeId: (id: string | null) => void
@@ -210,9 +219,40 @@ function sanitizeNodeForStorage(node: CanvasNode): CanvasNode {
   return sanitized
 }
 
+function sanitizeSnapshotNode(node: CanvasNode): CanvasNode {
+  return recoverWebNode(recoverInterruptedOcr(recoverInterruptedChat({ ...node, selected: false })))
+}
+
+function sanitizeSnapshotNodes(nodes: CanvasNode[]): CanvasNode[] {
+  return nodes.map(sanitizeSnapshotNode)
+}
+
+function stopStreamingNodes(nodes: CanvasNode[]) {
+  for (const node of nodes) {
+    if (node.data.kind === 'chat' && node.data.status === 'streaming') stopRequest(node.id)
+  }
+}
+
+function makeSnapshot(state: Pick<CanvasState, 'nodes' | 'viewport' | 'canvasTitle'>): CanvasSnapshot {
+  return {
+    title: state.canvasTitle,
+    viewport: state.viewport,
+    nodes: sanitizeSnapshotNodes(state.nodes),
+  }
+}
+
+function nextCanvasTitle(canvases: CanvasSummary[]): string {
+  let index = canvases.length + 1
+  while (canvases.some((canvas) => canvas.title === `画布 ${index}`)) index += 1
+  return `画布 ${index}`
+}
+
 export const useCanvasStore = create<CanvasState>()(
   persist(
     (set, get) => ({
+      activeCanvasId: initialCanvasId,
+      canvases: [{ id: initialCanvasId, title: '未命名画布' }],
+      canvasSnapshots: {},
       nodes: [],
       viewport: initialViewport,
       canvasTitle: '未命名画布',
@@ -232,7 +272,80 @@ export const useCanvasStore = create<CanvasState>()(
       },
       setNodes: (nodes) => set({ nodes }),
       setViewport: (viewport) => set({ viewport }),
-      setCanvasTitle: (canvasTitle) => set({ canvasTitle }),
+      setCanvasTitle: (canvasTitle) =>
+        set((state) => ({
+          canvasTitle,
+          canvases: state.canvases.map((canvas) =>
+            canvas.id === state.activeCanvasId ? { ...canvas, title: canvasTitle } : canvas,
+          ),
+        })),
+
+      createCanvas: () => {
+        const state = get()
+        stopStreamingNodes(state.nodes)
+        const title = nextCanvasTitle(state.canvases)
+        const id = createId('canvas')
+        set({
+          activeCanvasId: id,
+          canvases: [
+            ...state.canvases.map((canvas) =>
+              canvas.id === state.activeCanvasId
+                ? { ...canvas, title: state.canvasTitle }
+                : canvas,
+            ),
+            { id, title },
+          ],
+          canvasSnapshots: {
+            ...state.canvasSnapshots,
+            [state.activeCanvasId]: makeSnapshot(state),
+          },
+          canvasTitle: title,
+          nodes: [],
+          viewport: initialViewport,
+          selectedNodeId: null,
+          focusedNodeId: null,
+          pendingInputNodeId: null,
+          revealNodeId: null,
+          sourceJump: null,
+        })
+        return id
+      },
+
+      switchCanvas: (id) => {
+        const state = get()
+        if (id === state.activeCanvasId) return
+        const target = state.canvasSnapshots[id]
+        if (!target) return
+        stopStreamingNodes(state.nodes)
+        const canvasSnapshots = {
+          ...state.canvasSnapshots,
+          [state.activeCanvasId]: makeSnapshot(state),
+        }
+        delete canvasSnapshots[id]
+        const canvases = state.canvases.map((canvas) =>
+          canvas.id === state.activeCanvasId
+            ? { ...canvas, title: state.canvasTitle }
+            : canvas.id === id
+              ? { ...canvas, title: target.title }
+              : canvas,
+        )
+        set({
+          activeCanvasId: id,
+          canvases: canvases.some((canvas) => canvas.id === id)
+            ? canvases
+            : [...canvases, { id, title: target.title }],
+          canvasSnapshots,
+          canvasTitle: target.title,
+          nodes: target.nodes,
+          viewport: target.viewport,
+          selectedNodeId: null,
+          focusedNodeId: null,
+          pendingInputNodeId: null,
+          revealNodeId: null,
+          sourceJump: null,
+        })
+      },
+
       setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId }),
       setFocusedNodeId: (focusedNodeId) => set({ focusedNodeId }),
       setRevealNodeId: (revealNodeId) => set({ revealNodeId }),
@@ -708,6 +821,14 @@ export const useCanvasStore = create<CanvasState>()(
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        activeCanvasId: state.activeCanvasId,
+        canvases: state.canvases,
+        canvasSnapshots: Object.fromEntries(
+          Object.entries(state.canvasSnapshots).map(([id, snapshot]) => [
+            id,
+            { ...snapshot, nodes: sanitizeSnapshotNodes(snapshot.nodes) },
+          ]),
+        ),
         nodes: state.nodes.map(sanitizeNodeForStorage),
         viewport: state.viewport,
         canvasTitle: state.canvasTitle,
@@ -717,9 +838,56 @@ export const useCanvasStore = create<CanvasState>()(
       }),
       merge: (persisted, current) => {
         const saved = persisted as Partial<CanvasState> | undefined
+        const activeCanvasId =
+          typeof saved?.activeCanvasId === 'string' && saved.activeCanvasId
+            ? saved.activeCanvasId
+            : createId('canvas')
+        const rawCanvases = Array.isArray(saved?.canvases)
+          ? saved.canvases.filter(
+              (canvas): canvas is CanvasSummary =>
+                Boolean(canvas && typeof canvas.id === 'string' && typeof canvas.title === 'string'),
+            )
+          : []
+        let canvases = rawCanvases.length
+          ? rawCanvases
+          : [{ id: activeCanvasId, title: saved?.canvasTitle || '未命名画布' }]
+        canvases = canvases.map((canvas) =>
+          canvas.id === activeCanvasId
+            ? { ...canvas, title: saved?.canvasTitle || canvas.title || '未命名画布' }
+            : canvas,
+        )
+
+        const canvasSnapshots: Record<string, CanvasSnapshot> = {}
+        const savedSnapshots =
+          saved?.canvasSnapshots && typeof saved.canvasSnapshots === 'object'
+            ? saved.canvasSnapshots
+            : {}
+        for (const [id, snapshot] of Object.entries(savedSnapshots)) {
+          if (id === activeCanvasId) continue
+          if (!snapshot || !Array.isArray(snapshot.nodes)) continue
+          canvasSnapshots[id] = {
+            title: typeof snapshot.title === 'string' ? snapshot.title : '未命名画布',
+            viewport: snapshot.viewport ?? initialViewport,
+            nodes: sanitizeSnapshotNodes(snapshot.nodes),
+          }
+        }
+        for (const [id, snapshot] of Object.entries(canvasSnapshots)) {
+          if (!canvases.some((canvas) => canvas.id === id)) {
+            canvases.push({ id, title: snapshot.title })
+          }
+        }
+        if (!canvases.some((canvas) => canvas.id === activeCanvasId)) {
+          canvases = [{ id: activeCanvasId, title: saved?.canvasTitle || '未命名画布' }, ...canvases]
+        }
+
         return {
           ...current,
           ...saved,
+          activeCanvasId,
+          canvases,
+          canvasSnapshots,
+          canvasTitle: saved?.canvasTitle ?? current.canvasTitle,
+          viewport: saved?.viewport ?? current.viewport,
           apiConfig: { ...current.apiConfig, ...saved?.apiConfig },
           ocrConfig: { ...current.ocrConfig, ...saved?.ocrConfig },
           contentFontSize:

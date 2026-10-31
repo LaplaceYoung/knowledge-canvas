@@ -169,6 +169,17 @@ export interface CanvasViewport extends Viewport {
   zoom: number
 }
 
+export interface CanvasSummary {
+  id: string
+  title: string
+}
+
+export interface CanvasSnapshot {
+  title: string
+  viewport: CanvasViewport
+  nodes: CanvasNode[]
+}
+
 export interface SourceJumpRequest {
   nodeId: string
   messageId?: string

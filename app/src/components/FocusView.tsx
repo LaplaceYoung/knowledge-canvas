@@ -45,7 +45,7 @@ export function FocusView() {
   if (!node) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-12 z-40 bg-background" role="dialog" aria-modal="true" aria-label={`专注阅读：${node.data.title}`}>
+    <div className="fixed bottom-0 left-56 right-0 top-12 z-40 bg-background" role="dialog" aria-modal="true" aria-label={`专注阅读：${node.data.title}`}>
       <div className="flex h-full flex-col px-3 pb-3">
         <div className="flex h-10 flex-none items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">

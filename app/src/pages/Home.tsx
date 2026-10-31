@@ -1,4 +1,5 @@
 import { ApiSettingsDialog } from '@/components/ApiSettingsDialog'
+import { CanvasSidebar } from '@/components/CanvasSidebar'
 import { CanvasWorkspace } from '@/components/CanvasWorkspace'
 import { FocusView } from '@/components/FocusView'
 import { listenWebBridgeEvents } from '@/lib/web-bridge'
@@ -9,6 +10,7 @@ import '../App.css'
 
 export default function Home() {
   const contentFontSize = useCanvasStore((state) => state.contentFontSize)
+  const activeCanvasId = useCanvasStore((state) => state.activeCanvasId)
 
   useEffect(() => {
     return listenWebBridgeEvents((event) => {
@@ -17,12 +19,19 @@ export default function Home() {
     })
   }, [])
 
+  useEffect(() => {
+    void refreshWebNodeBindings()
+  }, [activeCanvasId])
+
   return (
     <div
-      className="app-shell"
+      className="app-shell flex"
       style={{ '--content-font-size': `${contentFontSize}px` } as React.CSSProperties}
     >
-      <CanvasWorkspace />
+      <CanvasSidebar />
+      <div className="min-w-0 flex-1">
+        <CanvasWorkspace key={activeCanvasId} />
+      </div>
       <FocusView />
       <ApiSettingsDialog />
     </div>
