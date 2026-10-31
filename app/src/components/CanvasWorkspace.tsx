@@ -432,11 +432,9 @@ export function CanvasWorkspace() {
                   ? { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY }
                   : null
             if (!point) return
-            if (start && Math.hypot(point.x - start.x, point.y - start.y) < 12) {
-              openCreateMenu(start, parentId)
-              return
-            }
-            openCreateMenu(point, parentId)
+            const menuPosition =
+              start && Math.hypot(point.x - start.x, point.y - start.y) < 12 ? start : point
+            window.setTimeout(() => openCreateMenu(menuPosition, parentId), 0)
           }}
           onPaneClick={(event) => {
             setSelectedNodeId(null)
