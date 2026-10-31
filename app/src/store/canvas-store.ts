@@ -85,8 +85,9 @@ interface CanvasState {
   addDocumentNode: (
     initial: Pick<DocumentNodeData, 'title' | 'fileName' | 'fileType'>,
     position: XYPosition,
+    parentId?: string,
   ) => string
-  addWebNode: (providerId: WebProviderId, position: XYPosition) => string
+  addWebNode: (providerId: WebProviderId, position: XYPosition, parentId?: string) => string
   updateWebNodeData: (id: string, updater: (data: WebNodeData) => WebNodeData) => void
   finishDocumentImport: (id: string, data: Partial<DocumentNodeData>) => void
   failDocumentImport: (id: string, error: string) => void
@@ -96,7 +97,7 @@ interface CanvasState {
   updateOcrPage: (id: string, page: number, update: Partial<Omit<OcrPage, 'number'>>) => void
   finishOcrRun: (id: string, error?: string) => void
   createBranch: (parentId: string, source: Omit<SourceAnchor, 'parentNodeId' | 'parentTitle'>) => string | null
-  createFork: (parentId: string) => string | null
+  createFork: (parentId: string, position?: XYPosition) => string | null
   removeNode: (id: string) => void
   setChatError: (id: string, error: string) => void
   rewindToLastUser: (id: string) => string | null
@@ -468,7 +469,7 @@ export const useCanvasStore = create<CanvasState>()(
         return node.id
       },
 
-      addDocumentNode: (initial, position) => {
+      addDocumentNode: (initial, position, parentId) => {
         const state = get()
         const size = NODE_SIZES.document
         const free = findFreePosition(state.nodes, position, size)
@@ -483,6 +484,7 @@ export const useCanvasStore = create<CanvasState>()(
           data: {
             kind: 'document',
             title: initial.title,
+            parentId,
             fileName: initial.fileName,
             fileType: initial.fileType,
             text: '',
@@ -499,7 +501,7 @@ export const useCanvasStore = create<CanvasState>()(
         return id
       },
 
-      addWebNode: (providerId, position) => {
+      addWebNode: (providerId, position, parentId) => {
         const state = get()
         const provider = WEB_PROVIDERS[providerId]
         const size = NODE_SIZES.web
@@ -515,6 +517,7 @@ export const useCanvasStore = create<CanvasState>()(
           data: {
             kind: 'web',
             title: provider.label,
+            parentId,
             providerId,
             conversationUrl: provider.homeUrl,
             bindingState: 'unbound',
@@ -663,13 +666,19 @@ export const useCanvasStore = create<CanvasState>()(
         }))
       },
 
-      createFork: (parentId) => {
+      createFork: (parentId, position) => {
         const state = get()
         const parent = state.nodes.find((node) => node.id === parentId)
         if (!parent) return null
-        const position = findBranchPosition(state.nodes, parent)
+        const size = NODE_SIZES.chat
+        const free = position
+          ? findFreePosition(state.nodes, {
+              x: position.x - size.width / 2,
+              y: position.y - size.height / 2,
+            }, size)
+          : findBranchPosition(state.nodes, parent)
         const node = makeChatNode(
-          position,
+          free,
           `分支：${parent.data.title.slice(0, 24)}`,
           parentId,
         )

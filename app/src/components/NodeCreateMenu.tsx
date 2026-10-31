@@ -13,6 +13,7 @@ export interface CreateMenuPosition {
 
 interface NodeCreateMenuProps {
   position: CreateMenuPosition
+  title?: string
   onClose: () => void
   onCreateChat: (position: CreateMenuPosition) => void
   onImport: (position: CreateMenuPosition) => void
@@ -48,6 +49,7 @@ function insideRect(point: Point, rect: DOMRect) {
 
 export function NodeCreateMenu({
   position,
+  title = '新增节点',
   onClose,
   onCreateChat,
   onImport,
@@ -161,13 +163,13 @@ export function NodeCreateMenu({
     <div
       ref={menuRef}
       role="dialog"
-      aria-label="新增节点"
+      aria-label={title}
       className="fixed z-[60] w-[224px] rounded-lg border bg-popover text-popover-foreground shadow-xl"
       style={{ left, top }}
       onPointerLeave={scheduleClose}
     >
       <div className="flex h-10 items-center justify-between border-b px-3">
-        <span className="text-sm font-medium">新增节点</span>
+        <span className="text-sm font-medium">{title}</span>
         <Button
           type="button"
           variant="ghost"

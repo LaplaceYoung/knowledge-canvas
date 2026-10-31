@@ -110,11 +110,19 @@ function CanvasNavigation() {
 export function CanvasWorkspace() {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const pendingImportPointRef = useRef<CreateMenuPosition | null>(null)
+  const pendingImportPointRef = useRef<{
+    position: CreateMenuPosition
+    parentId?: string
+  } | null>(null)
+  const forkParentRef = useRef<string | null>(null)
+  const forkStartPointRef = useRef<{ x: number; y: number } | null>(null)
   const lastPaneClickRef = useRef<{ time: number; x: number; y: number } | null>(null)
   const [panMode, setPanMode] = useState(false)
   const [dragActive, setDragActive] = useState(false)
-  const [createMenu, setCreateMenu] = useState<CreateMenuPosition | null>(null)
+  const [createMenu, setCreateMenu] = useState<{
+    position: CreateMenuPosition
+    parentId?: string
+  } | null>(null)
   const [zoom, setZoom] = useState(1)
   const [zoomTier, setZoomTier] = useState<'detail' | 'overview' | 'map'>('detail')
   const nodes = useCanvasStore((state) => state.nodes)
@@ -127,6 +135,7 @@ export function CanvasWorkspace() {
   const addChatNode = useCanvasStore((state) => state.addChatNode)
   const addDocumentNode = useCanvasStore((state) => state.addDocumentNode)
   const addWebNode = useCanvasStore((state) => state.addWebNode)
+  const createFork = useCanvasStore((state) => state.createFork)
   const finishDocumentImport = useCanvasStore((state) => state.finishDocumentImport)
   const failDocumentImport = useCanvasStore((state) => state.failDocumentImport)
   const revealNodeId = useCanvasStore((state) => state.revealNodeId)
@@ -170,20 +179,24 @@ export function CanvasWorkspace() {
   }, [addChatNode, centerPoint, screenToFlowPosition])
 
   const createChatAtPoint = useCallback(
-    (position: CreateMenuPosition) => {
+    (position: CreateMenuPosition, parentId?: string) => {
       const point = screenToFlowPosition(position)
-      addChatNode({
-        x: point.x - NODE_SIZES.chat.width / 2,
-        y: point.y - NODE_SIZES.chat.height / 2,
-      })
+      if (parentId) {
+        createFork(parentId, point)
+      } else {
+        addChatNode({
+          x: point.x - NODE_SIZES.chat.width / 2,
+          y: point.y - NODE_SIZES.chat.height / 2,
+        })
+      }
       setCreateMenu(null)
     },
-    [addChatNode, screenToFlowPosition],
+    [addChatNode, createFork, screenToFlowPosition],
   )
 
   const openCreateMenu = useCallback(
-    (position?: CreateMenuPosition) => {
-      setCreateMenu(position ?? centerPoint())
+    (position?: CreateMenuPosition, parentId?: string) => {
+      setCreateMenu({ position: position ?? centerPoint(), parentId })
       setSelectedNodeId(null)
     },
     [centerPoint, setSelectedNodeId],
@@ -192,26 +205,26 @@ export function CanvasWorkspace() {
   const closeCreateMenu = useCallback(() => setCreateMenu(null), [])
 
   const createWebAtPoint = useCallback(
-    (providerId: WebProviderId, position: CreateMenuPosition) => {
+    (providerId: WebProviderId, position: CreateMenuPosition, parentId?: string) => {
       const point = screenToFlowPosition(position)
       const id = addWebNode(providerId, {
         x: point.x - NODE_SIZES.web.width / 2,
         y: point.y - NODE_SIZES.web.height / 2,
-      })
+      }, parentId)
       setCreateMenu(null)
       void connectWebNode(id)
     },
     [addWebNode, screenToFlowPosition],
   )
 
-  const importAtPoint = useCallback((position: CreateMenuPosition) => {
-    pendingImportPointRef.current = position
+  const importAtPoint = useCallback((position: CreateMenuPosition, parentId?: string) => {
+    pendingImportPointRef.current = { position, parentId }
     setCreateMenu(null)
     fileInputRef.current?.click()
   }, [])
 
   const importFiles = useCallback(
-    async (files: File[], clientPoint?: { x: number; y: number }) => {
+    async (files: File[], clientPoint?: { x: number; y: number }, parentId?: string) => {
       if (!files.length) return
       const baseScreen = clientPoint ?? centerPoint()
       const basePoint = screenToFlowPosition(baseScreen)
@@ -232,6 +245,7 @@ export function CanvasWorkspace() {
             x: basePoint.x + index * 36,
             y: basePoint.y + index * 36,
           },
+          parentId,
         )
 
         try {
@@ -384,7 +398,8 @@ export function CanvasWorkspace() {
           panOnDrag={panMode ? true : [1, 2]}
           selectionOnDrag={!panMode}
           nodesDraggable={!panMode}
-          nodesConnectable={false}
+          nodesConnectable
+          connectionLineStyle={{ stroke: 'var(--ring)', strokeWidth: 1.5 }}
           deleteKeyCode={null}
           snapToGrid
           snapGrid={[8, 8]}
@@ -395,6 +410,34 @@ export function CanvasWorkspace() {
           }}
           onMoveEnd={(_, nextViewport) => setViewport(nextViewport)}
           onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+          onConnectStart={(event, params) => {
+            forkParentRef.current = params.nodeId
+            if ('clientX' in event) {
+              forkStartPointRef.current = { x: event.clientX, y: event.clientY }
+            } else {
+              const touch = event.changedTouches[0] ?? event.touches[0]
+              forkStartPointRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null
+            }
+          }}
+          onConnectEnd={(event, connectionState) => {
+            const parentId = forkParentRef.current
+            const start = forkStartPointRef.current
+            forkParentRef.current = null
+            forkStartPointRef.current = null
+            if (!parentId || connectionState.toNode) return
+            const point =
+              'clientX' in event
+                ? { x: event.clientX, y: event.clientY }
+                : event.changedTouches[0]
+                  ? { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY }
+                  : null
+            if (!point) return
+            if (start && Math.hypot(point.x - start.x, point.y - start.y) < 12) {
+              openCreateMenu(start, parentId)
+              return
+            }
+            openCreateMenu(point, parentId)
+          }}
           onPaneClick={(event) => {
             setSelectedNodeId(null)
             const now = Date.now()
@@ -451,18 +494,22 @@ export function CanvasWorkspace() {
           onChange={(event) => {
             const files = Array.from(event.target.files ?? [])
             event.currentTarget.value = ''
-            void importFiles(files, pendingImportPointRef.current ?? undefined)
+            const pending = pendingImportPointRef.current
+            void importFiles(files, pending?.position, pending?.parentId)
             pendingImportPointRef.current = null
           }}
         />
 
         {createMenu && (
           <NodeCreateMenu
-            position={createMenu}
+            position={createMenu.position}
+            title={createMenu.parentId ? '新增下游节点' : '新增节点'}
             onClose={closeCreateMenu}
-            onCreateChat={createChatAtPoint}
-            onImport={importAtPoint}
-            onCreateWeb={createWebAtPoint}
+            onCreateChat={(position) => createChatAtPoint(position, createMenu.parentId)}
+            onImport={(position) => importAtPoint(position, createMenu.parentId)}
+            onCreateWeb={(providerId, position) =>
+              createWebAtPoint(providerId, position, createMenu.parentId)
+            }
           />
         )}
       </div>

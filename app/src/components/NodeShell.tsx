@@ -58,7 +58,7 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
       className={cn(
         `canvas-node canvas-node--${node.data.kind}`,
         'group relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-xs',
-        selected && 'border-ring ring-1 ring-ring',
+        selected && 'is-selected border-ring ring-1 ring-ring',
         mode === 'focus' && 'is-focus rounded-none border-0 shadow-none ring-0',
       )}
       aria-label={`${typeLabel}：${node.data.title}`}
@@ -66,7 +66,17 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
       {mode === 'canvas' && (
         <>
           <Handle type="target" position={Position.Left} className="canvas-handle" isConnectable={false} />
-          <Handle type="source" position={Position.Right} className="canvas-handle" isConnectable={false} />
+          <Handle
+            id="fork"
+            type="source"
+            position={Position.Right}
+            className="canvas-handle canvas-fork-handle nodrag"
+            isConnectable
+            title="拖到空白处引出下游节点"
+            aria-label="拖到空白处引出下游节点"
+          >
+            <Plus className="size-3.5" />
+          </Handle>
         </>
       )}
       <button
@@ -170,23 +180,6 @@ export function NodeShell({ node, selected, mode, children }: NodeShellProps) {
           )}
         </div>
       </header>
-
-      {mode === 'canvas' && (
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          className="nodrag absolute right-1.5 top-1/2 z-20 size-7 -translate-y-1/2 rounded-full bg-card opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-          title="引出下游节点"
-          aria-label="引出下游节点"
-          onClick={(event) => {
-            event.stopPropagation()
-            createFork(node.id)
-          }}
-        >
-          <Plus className="size-3.5" />
-        </Button>
-      )}
 
       {source && (
         <button
