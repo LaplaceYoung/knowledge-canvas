@@ -40,7 +40,7 @@ It is a **pure web application**. No Electron, no Tauri, no local browser proces
 | | |
 |---|---|
 | **Infinite canvas** | Pan, zoom, drag, resize, minimap, semantic zoom, and camera reveal with React Flow. |
-| **Canvas sidebar** | Create, rename, and switch between multiple persisted canvases without leaving the workspace. |
+| **Canvas sidebar** | Create, rename, pin, reorder, delete, and switch between multiple persisted canvases without leaving the workspace. |
 | **Branching chat** | assistant-ui thread with streaming, stop, retry, copy, regenerate, Markdown, GFM, LaTeX, and code copy. |
 | **Source-anchored branches** | Every follow-up keeps its quoted passage, parent message or page, and a return path to the source. |
 | **Documents** | Read-only PDF, Markdown, and TXT nodes with text selection and local persistence. |

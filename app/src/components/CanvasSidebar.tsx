@@ -1,7 +1,10 @@
-import { LayoutGrid, Plus } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { LayoutGrid, Pin, Plus, Trash2 } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useCanvasStore } from '@/store/canvas-store'
+import type { CanvasSummary } from '@/types/canvas'
 
 export function CanvasSidebar() {
   const canvases = useCanvasStore((state) => state.canvases)
@@ -9,6 +12,112 @@ export function CanvasSidebar() {
   const canvasTitle = useCanvasStore((state) => state.canvasTitle)
   const createCanvas = useCanvasStore((state) => state.createCanvas)
   const switchCanvas = useCanvasStore((state) => state.switchCanvas)
+  const deleteCanvas = useCanvasStore((state) => state.deleteCanvas)
+  const toggleCanvasPin = useCanvasStore((state) => state.toggleCanvasPin)
+  const reorderCanvas = useCanvasStore((state) => state.reorderCanvas)
+  const [deletingCanvas, setDeletingCanvas] = useState<CanvasSummary | null>(null)
+  const [dragCanvasId, setDragCanvasId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+
+  const pinnedCanvases = useMemo(
+    () => canvases.filter((canvas) => canvas.pinned),
+    [canvases],
+  )
+  const unpinnedCanvases = useMemo(
+    () => canvases.filter((canvas) => !canvas.pinned),
+    [canvases],
+  )
+
+  const canDelete = canvases.length > 1
+  const displayTitle = (canvas: CanvasSummary) =>
+    (canvas.id === activeCanvasId ? canvasTitle : canvas.title).trim() || '未命名画布'
+
+  const renderCanvas = (canvas: CanvasSummary) => {
+    const active = canvas.id === activeCanvasId
+    const pinned = Boolean(canvas.pinned)
+    const title = displayTitle(canvas)
+
+    return (
+      <div
+        key={canvas.id}
+        draggable
+        onDragStart={(event) => {
+          setDragCanvasId(canvas.id)
+          event.dataTransfer.effectAllowed = 'move'
+          event.dataTransfer.setData('text/plain', canvas.id)
+        }}
+        onDragOver={(event) => {
+          if (!dragCanvasId || dragCanvasId === canvas.id) return
+          const source = canvases.find((entry) => entry.id === dragCanvasId)
+          if (!source || Boolean(source.pinned) !== pinned) return
+          event.preventDefault()
+          event.dataTransfer.dropEffect = 'move'
+          setDropTargetId(canvas.id)
+        }}
+        onDragLeave={() => {
+          setDropTargetId((current) => (current === canvas.id ? null : current))
+        }}
+        onDrop={(event) => {
+          event.preventDefault()
+          if (dragCanvasId) reorderCanvas(dragCanvasId, canvas.id)
+          setDragCanvasId(null)
+          setDropTargetId(null)
+        }}
+        onDragEnd={() => {
+          setDragCanvasId(null)
+          setDropTargetId(null)
+        }}
+        className={cn(
+          'group flex h-9 items-center gap-0.5 rounded-md px-1 transition-colors',
+          active
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+          dragCanvasId === canvas.id && 'opacity-50',
+          dropTargetId === canvas.id && 'ring-1 ring-inset ring-ring',
+        )}
+      >
+        <button
+          type="button"
+          aria-current={active ? 'page' : undefined}
+          title={title}
+          className="flex h-full min-w-0 flex-1 cursor-grab items-center gap-2 px-1 text-left text-[13px] active:cursor-grabbing"
+          onClick={() => switchCanvas(canvas.id)}
+        >
+          <LayoutGrid className="size-4 shrink-0 opacity-70" />
+          <span className="truncate">{title}</span>
+        </button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className={cn(
+            'size-6 shrink-0 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+            pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+          )}
+          title={pinned ? '取消 Pin' : 'Pin 到顶部'}
+          aria-label={pinned ? '取消 Pin' : 'Pin 到顶部'}
+          onClick={() => toggleCanvasPin(canvas.id)}
+        >
+          <Pin className={cn('size-3.5', pinned && 'fill-current')} />
+        </Button>
+
+        {canDelete && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-6 shrink-0 text-sidebar-foreground/60 opacity-0 hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
+            title="删除画布"
+            aria-label="删除画布"
+            onClick={() => setDeletingCanvas(canvas)}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </div>
+    )
+  }
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -30,30 +139,24 @@ export function CanvasSidebar() {
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-3" aria-label="画布列表">
         <div className="flex flex-col gap-0.5">
-          {canvases.map((canvas) => {
-            const active = canvas.id === activeCanvasId
-            const title = active ? canvasTitle : canvas.title
-            return (
-              <button
-                key={canvas.id}
-                type="button"
-                aria-current={active ? 'page' : undefined}
-                title={title || '未命名画布'}
-                className={cn(
-                  'flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] transition-colors',
-                  active
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
-                )}
-                onClick={() => switchCanvas(canvas.id)}
-              >
-                <LayoutGrid className="size-4 shrink-0 opacity-70" />
-                <span className="truncate">{title.trim() || '未命名画布'}</span>
-              </button>
-            )
-          })}
+          {pinnedCanvases.map(renderCanvas)}
+          {pinnedCanvases.length > 0 && unpinnedCanvases.length > 0 && (
+            <div className="my-1 h-px bg-sidebar-border" aria-hidden="true" />
+          )}
+          {unpinnedCanvases.map(renderCanvas)}
         </div>
       </nav>
+
+      <ConfirmDialog
+        open={Boolean(deletingCanvas)}
+        title={`删除「${deletingCanvas ? displayTitle(deletingCanvas) : ''}」？`}
+        description="画布和其中的节点会从本地删除。此操作不能撤销。"
+        onClose={() => setDeletingCanvas(null)}
+        onConfirm={() => {
+          if (deletingCanvas) deleteCanvas(deletingCanvas.id)
+          setDeletingCanvas(null)
+        }}
+      />
     </aside>
   )
 }

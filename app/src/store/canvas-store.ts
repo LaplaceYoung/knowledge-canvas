@@ -55,6 +55,9 @@ interface CanvasState {
   setCanvasTitle: (title: string) => void
   createCanvas: () => string
   switchCanvas: (id: string) => void
+  deleteCanvas: (id: string) => void
+  toggleCanvasPin: (id: string) => void
+  reorderCanvas: (sourceId: string, targetId: string) => void
   setSelectedNodeId: (id: string | null) => void
   setFocusedNodeId: (id: string | null) => void
   setRevealNodeId: (id: string | null) => void
@@ -343,6 +346,66 @@ export const useCanvasStore = create<CanvasState>()(
           pendingInputNodeId: null,
           revealNodeId: null,
           sourceJump: null,
+        })
+      },
+
+      deleteCanvas: (id) => {
+        const state = get()
+        if (state.canvases.length <= 1) return
+        const remaining = state.canvases.filter((canvas) => canvas.id !== id)
+        const canvasSnapshots = { ...state.canvasSnapshots }
+        delete canvasSnapshots[id]
+
+        if (id !== state.activeCanvasId) {
+          set({ canvases: remaining, canvasSnapshots })
+          return
+        }
+
+        stopStreamingNodes(state.nodes)
+        const ordered = [...remaining].sort(
+          (left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)),
+        )
+        const target = ordered[0]
+        const targetSnapshot = canvasSnapshots[target.id]
+        delete canvasSnapshots[target.id]
+        set({
+          canvases: remaining,
+          canvasSnapshots,
+          activeCanvasId: target.id,
+          canvasTitle: targetSnapshot?.title ?? target.title,
+          nodes: targetSnapshot?.nodes ?? [],
+          viewport: targetSnapshot?.viewport ?? initialViewport,
+          selectedNodeId: null,
+          focusedNodeId: null,
+          pendingInputNodeId: null,
+          revealNodeId: null,
+          sourceJump: null,
+        })
+      },
+
+      toggleCanvasPin: (id) => {
+        set((state) => ({
+          canvases: state.canvases.map((canvas) =>
+            canvas.id === id ? { ...canvas, pinned: !canvas.pinned } : canvas,
+          ),
+        }))
+      },
+
+      reorderCanvas: (sourceId, targetId) => {
+        if (sourceId === targetId) return
+        set((state) => {
+          const source = state.canvases.find((canvas) => canvas.id === sourceId)
+          const target = state.canvases.find((canvas) => canvas.id === targetId)
+          if (!source || !target || Boolean(source.pinned) !== Boolean(target.pinned)) return state
+          const ordered = [...state.canvases].sort(
+            (left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)),
+          )
+          const from = ordered.findIndex((canvas) => canvas.id === sourceId)
+          const to = ordered.findIndex((canvas) => canvas.id === targetId)
+          if (from < 0 || to < 0) return state
+          const [moved] = ordered.splice(from, 1)
+          ordered.splice(to, 0, moved)
+          return { canvases: ordered }
         })
       },
 

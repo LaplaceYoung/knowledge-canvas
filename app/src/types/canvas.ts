@@ -172,6 +172,7 @@ export interface CanvasViewport extends Viewport {
 export interface CanvasSummary {
   id: string
   title: string
+  pinned?: boolean
 }
 
 export interface CanvasSnapshot {
